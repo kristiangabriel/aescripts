@@ -10,7 +10,7 @@ Welcome to your central library of After Effects expressions and micro-training 
 - [Text & Type](#text-and-type)
 - [Motion & Physics](#motion-and-physics)
 - [Controllers & Rigging](#controllers-and-rigging)
-- [Color & Lighting](#-color--lighting)
+- [Color & Lighting](#color-and-lighting)
 - [Time & Looping](#-time--looping)
 - [Utility & Automation](#-utility--automation)
 - [Project Management / Organization](#-project-management--organization)
@@ -1193,4 +1193,260 @@ valueAtTime(t);
 ────────────────────────────────────────────────────────────────────────
 
 Next → **Color & Lighting**: build global palettes, light-linked responses, and auto-toning rigs driven from a single controller.
+
+
+<a id="color-and-lighting"></a>
+## 🎨 Color & Lighting — Practical Motion Recipes
+This section teaches you how to build color systems and pseudo-lighting directly inside After Effects using expressions.  
+You’ll link palettes to controllers, automate tonal shifts, drive gradients from motion, and simulate environmental light sweeps—all fully procedural and keyframe-free.
+
+────────────────────────────────────────────────────────────────────────
+
+### 🧭 Color Philosophy
+- **Centralize color.** One “Master Color” drives every layer for effortless recoloring.
+- **Use hue, brightness, and contrast as story tools, not decorations.**
+- **Lighting in 2D ≠ real physics.** We mimic falloff, directionality, and reflection through gradients, blurs, and math.
+
+Recommended setup:
+- Create a Null named **CTRL**.
+- Add the following Expression Controls:
+  - Color Control → **Master Color**
+  - Slider → **Light Intensity**
+  - Slider → **Shadow Depth**
+  - Angle Control → **Light Angle**
+  - Checkbox → **Dynamic Lighting**
+
+────────────────────────────────────────────────────────────────────────
+
+### 1) Global Palette Control
+**What it does:** applies one color palette across multiple elements.
+
+**Where:** Shape Fill Color or Text Fill Color.
+
+```js
+C = thisComp.layer("CTRL");
+C.effect("Master Color")("Color");
 ```
+
+**Usage tip:** duplicate CTRL and recolor for alternative schemes (day/night, brand A/brand B).
+
+────────────────────────────────────────────────────────────────────────
+
+### 2) Light-Intensity → Brightness Mapping
+**What it does:** converts a slider value (0–100) into brightness variations across layers.
+
+**Where:** Shape Fill Color, set base color as value; add this expression.
+
+```js
+C = thisComp.layer("CTRL");
+base = value; 
+intensity = C.effect("Light Intensity")("Slider")/100;
+base + [intensity*0.2, intensity*0.2, intensity*0.2, 0];
+```
+
+**Tune:** increase the 0.2 multipliers for stronger brightness reaction.  
+**Example:** global “fade to daylight” when intensity ramps.
+
+────────────────────────────────────────────────────────────────────────
+
+### 3) Directional Lighting (Angle-Based Highlight)
+**What it does:** simulates light direction by altering brightness based on the layer’s position relative to a virtual angle.
+
+**Where:** Shape Fill Color.
+
+```js
+C = thisComp.layer("CTRL");
+ang = degreesToRadians(C.effect("Light Angle")("Angle"));
+lightVec = [Math.cos(ang), Math.sin(ang)];
+pos = toWorld(anchorPoint);
+rel = normalize(pos - thisComp.width/2);
+dot = clamp(dot(rel, lightVec), -1, 1);
+brightness = linear(dot, -1, 1, 0.6, 1.4);
+value*brightness;
+```
+
+**Tune:** adjust 0.6–1.4 range for contrast strength.  
+**Example:** pseudo-sunlight sweep across icons.
+
+────────────────────────────────────────────────────────────────────────
+
+### 4) Shadow Depth → Opacity Falloff
+**What it does:** darkens objects based on distance from a virtual light source.
+
+**Where:** Shape Layer Opacity.
+
+```js
+C=thisComp.layer("CTRL");
+depth = C.effect("Shadow Depth")("Slider");
+src = thisComp.layer("CTRL").toWorld([0,0,0]);
+pos = toWorld(anchorPoint);
+dist = length(pos - src);
+linear(dist, 0, 600, 100, 100 - depth);
+```
+
+**Example:** as objects move away from the “light source,” they dim.
+
+────────────────────────────────────────────────────────────────────────
+
+### 5) Motion-Linked Color Shift
+**What it does:** shifts hue based on speed—adds energy to fast motion.
+
+**Where:** Shape Fill Color.
+
+```js
+spd = length(velocity);
+hsl = rgbToHsl(value);
+hsl[0] += spd/1000;          // hue shift
+hsl[1] = clamp(hsl[1],0,1);  // keep saturation safe
+hsl[2] = clamp(hsl[2],0,1);  // keep brightness safe
+hslToRgb(hsl);
+```
+
+**Tune:** smaller divisor (e.g., 800) = stronger hue change.  
+**Example:** streaks that tint warmer when accelerating.
+
+────────────────────────────────────────────────────────────────────────
+
+### 6) Auto Gradient Lighting (per-object two-tone)
+**What it does:** creates an automatic gradient from top-to-bottom brightness or depth.
+
+**Where:** Gradient Fill’s Start Color or End Color.
+
+```js
+C = thisComp.layer("CTRL");
+intensity = C.effect("Light Intensity")("Slider")/100;
+dir = normalize([0, -1]); // light from above
+p = toWorld(anchorPoint);
+val = linear(p[1], 0, thisComp.height, 1.2, 0.8);
+value * val * (1 + intensity*0.5);
+```
+
+**Example:** UI panels with self-shading; pseudo-3D cylinders.
+
+────────────────────────────────────────────────────────────────────────
+
+### 7) Flicker Light Pulse
+**What it does:** generates organic flicker using random noise.
+
+**Where:** Opacity, Exposure, or Color Brightness.
+
+```js
+freq = 5; amp = 15;
+seedRandom(index + time*10, true);
+value + (random(-amp, amp) * Math.sin(time*freq));
+```
+
+**Tip:** link `freq` and `amp` to CTRL sliders for art-directed chaos.  
+**Example:** neon signage, projector jitter, candlelight.
+
+────────────────────────────────────────────────────────────────────────
+
+### 8) Global Warm/Cool Tint Blend
+**What it does:** lets a single slider fade the scene from cool (blue) to warm (orange).
+
+**Where:** Adjustment Layer > Tint Effect > Map White To.
+
+```js
+C = thisComp.layer("CTRL");
+S = C.effect("WarmCool")("Slider")/100;
+cool = [0.3,0.6,1];
+warm = [1,0.7,0.4];
+linear(S,0,1,cool,warm);
+```
+
+**Add a “WarmCool” Slider** (0=cool, 100=warm) to CTRL.  
+**Example:** dynamic time-of-day shifts.
+
+────────────────────────────────────────────────────────────────────────
+
+### 9) Auto Color Balance on Exposure Change
+**What it does:** keeps colors vibrant when global exposure changes.
+
+**Where:** Adjustment Layer > Exposure Effect > Exposure Expression.
+
+```js
+C=thisComp.layer("CTRL");
+exp = C.effect("Light Intensity")("Slider")/100;
+exp*1.5 - 0.5; // scale and bias
+```
+
+Then on the Tint or Curves layer:
+```js
+C=thisComp.layer("CTRL");
+exp = C.effect("Light Intensity")("Slider")/100;
+linear(exp,0,1,1.0,1.2);
+```
+
+**Result:** bright scenes stay colorful; dim scenes avoid crush.
+
+────────────────────────────────────────────────────────────────────────
+
+### 10) Procedural Rim Light Simulation
+**What it does:** fakes rim-light edge glow based on angle to light source.
+
+**Where:** Opacity of a duplicate layer set to “Add” blend mode.
+
+```js
+C=thisComp.layer("CTRL");
+ang = degreesToRadians(C.effect("Light Angle")("Angle"));
+lightVec = [Math.cos(ang), Math.sin(ang)];
+n = normalize(toWorldVec([0,1,0]));
+rim = clamp(dot(n, lightVec), 0, 1);
+linear(rim,0,1,0,100);
+```
+
+**Example:** glowing edges reacting to virtual sunlight angle.
+
+────────────────────────────────────────────────────────────────────────
+
+### 11) Motion Blur Compensation for Light Flicker
+**What it does:** ties light intensity to comp’s shutter angle for cinematic flicker.
+
+**Where:** Exposure or Glow Intensity.
+
+```js
+shutter = thisComp.frameDuration * thisComp.frameRate;
+amp = shutter*120; // adjust scaling
+value * (1 + Math.sin(time*amp)*0.05);
+```
+
+**Use:** subtle pulse matching motion-blur rhythm.
+
+────────────────────────────────────────────────────────────────────────
+
+### 12) Color Loop for Abstract Backgrounds
+**What it does:** cycles hue endlessly—useful for animated gradients.
+
+**Where:** Solid Layer > Fill Color.
+
+```js
+speed = 0.1; // cycles per second
+hsl = rgbToHsl(value);
+hsl[0] += time*speed;
+hslToRgb(hsl);
+```
+
+**Example:** looping pastel fields, ambient mood lighting.
+
+────────────────────────────────────────────────────────────────────────
+
+### 🔧 Troubleshooting
+- **Colors oversaturate:** clamp hue/brightness after conversion.  
+- **Nothing changes:** verify effect names on CTRL match exactly.  
+- **Flicker too strong:** lower amplitude or apply smooth() to time.  
+- **Performance:** group related expressions on an Adjustment Layer and reference its result with sampleImage() for efficiency.
+
+────────────────────────────────────────────────────────────────────────
+
+### 🧪 Practice Exercises
+1. Build a **Master Color** rig controlling 10 layers; test instant recoloring.  
+2. Add a **Light Angle** sweep animating across a logo.  
+3. Create a **Warm/Cool** slider for “sunset → night” transition.  
+4. Link **Motion Hue Shift** to a bouncing icon; observe live color energy.  
+5. Combine **Flicker Pulse** + **Directional Light** for vintage film glow.
+
+────────────────────────────────────────────────────────────────────────
+
+Next → **Environmental FX & Camera Systems:** integrate fog, depth haze, and parallax light reactions for cinematic realism.
+```
+
