@@ -13,6 +13,7 @@ Welcome to your central library of After Effects expressions and micro-training 
 - [Color & Lighting](#color-and-lighting)
 - [Environmental FX & Camera Systems](#environmental-fx-and-camera-systems)
 - [Professional Camera Rigging](#professional-camera-rigging)
+- [Professional Camera Rigging – Part II (Specialized Systems)](#professional-camera-rigging-part-ii-specialized-systems)
 - [Time & Looping](#-time--looping)
 - [Utility & Automation](#-utility--automation)
 - [Project Management / Organization](#-project-management--organization)
@@ -2011,4 +2012,327 @@ Start with the **Simple Rig** for quick storytelling and graduate to the **Profe
 With these setups, your virtual camera behaves like its real-world counterpart — smooth, layered, and intuitive.  
 
 > 🪄 *Next:* “Environmental FX & Camera Systems” expands on this by connecting your camera rig to atmospheric depth, light sweeps, and parallax for cinematic environments.
+
+
+<a id="professional-camera-rigging-part-ii-specialized-systems"></a>
+## 🎥 Professional Camera Rigging – Part II (Specialized Systems)
+The advanced side of camera rigging expands beyond a single controller and into intelligent systems — rigs that can switch cameras, follow subjects automatically, simulate handheld operators, or adapt to environments. These techniques bridge film cinematography and motion design, bringing dynamic control and realism into After Effects.
+
+────────────────────────────────────────────────────────────────────────
+
+### 🧭 Overview: Why Specialized Rigs?
+As shots grow complex, animating one camera is no longer enough.  
+You may need:
+- **Multi-camera angles** for edit-friendly sequences.  
+- **Target-based tracking** for auto-follow and composition consistency.  
+- **Handheld simulation** for realism.  
+- **Auto-focus and rack-focus systems** that respond dynamically to subjects.  
+- **Triggerable cinematic tools** for directors — toggled directly from a master control panel.
+
+These specialized rigs allow your After Effects cameras to function like real production setups: switchers, dollies, and focus pullers — but all procedural and editable.
+
+────────────────────────────────────────────────────────────────────────
+
+## 1) Multi-Camera Switching Rig
+**What it does**  
+Switches between two or more virtual cameras using a single controller slider or marker-based logic — perfect for cutting between angles without multiple comps.
+
+### 🧩 Build Steps
+1. Create **Camera_A**, **Camera_B**, and optionally **Camera_C**.  
+2. Add a **Null** named **CAM_SWITCHER**.  
+3. Add a **Slider Control** to it named **Camera Select** (0–100).  
+
+### 📜 Expression (paste on a “Controller Camera” Position, Orientation, and Zoom)
+```js
+C = thisComp.layer("CAM_SWITCHER");
+S = C.effect("Camera Select")("Slider");
+A = thisComp.layer("Camera_A");
+B = thisComp.layer("Camera_B");
+t = linear(S, 0, 100, 0, 1);
+
+posA = A.position;
+posB = B.position;
+oriA = A.orientation;
+oriB = B.orientation;
+zoomA = A.cameraOption.zoom;
+zoomB = B.cameraOption.zoom;
+
+// interpolate between A and B
+interpPos = linear(t, 0, 1, posA, posB);
+interpOri = linear(t, 0, 1, oriA, oriB);
+interpZoom = linear(t, 0, 1, zoomA, zoomB);
+
+[position, orientation, zoom] = [interpPos, interpOri, interpZoom];
+```
+
+**Usage:**  
+- Set **Camera Select** to 0 for A, 100 for B, and keyframe between them.  
+- Add more cameras by extending the interpolation chain (A→B→C).  
+- Works well with **Layer Markers** (e.g., switch when marker passes time).
+
+**Pro Tip:** Add a *Hold Interpolation* to get instant “cuts” between camera states.
+
+────────────────────────────────────────────────────────────────────────
+
+## 2) Auto-Focus & Rack-Focus Targeting
+**What it does**  
+Dynamically calculates focus distance to a moving target (object or null), mimicking a real focus puller.
+
+**Setup:**  
+- Add **Focus Target** (Null).  
+- Add **Slider Control** on CTRL named “Focus Offset” (for creative bias).  
+- Enable DOF in Camera Options.
+
+**Paste on Camera > Focus Distance:**
+```js
+camPos = toWorld([0,0,0]);
+target = thisComp.layer("Focus Target").toWorld([0,0,0]);
+offset = thisComp.layer("CTRL").effect("Focus Offset")("Slider");
+dist = length(target - camPos);
+dist + offset;
+```
+
+**Usage:**  
+- Animate Focus Target’s Z-position for cinematic rack-focus moves.  
+- Adjust Focus Offset for slightly over/under-focused looks.
+
+────────────────────────────────────────────────────────────────────────
+
+## 3) Target-Based Dolly Rig (with Inertia)
+**What it does**  
+Moves the camera closer/farther from a target while maintaining orientation and smooth motion.
+
+**Setup:**  
+- Create a **Camera** parented to a **Null** named **DOLLY_CTRL**.  
+- Add **Slider Control**: “Follow Distance” and “Lag Amount”.
+
+**Paste on DOLLY_CTRL Position:**
+```js
+C=thisComp.layer("CTRL");
+target = thisComp.layer("Focus Target").toWorld([0,0,0]);
+follow = C.effect("Follow Distance")("Slider");
+lag = C.effect("Lag Amount")("Slider");
+camPos = thisLayer.toWorld(anchorPoint);
+
+dir = normalize(target - camPos);
+goal = target - dir*follow;
+value + (goal - value)/lag;
+```
+
+**Result:**  
+Camera glides into range and holds smooth distance from target, ideal for orbit or hero-product shots.
+
+────────────────────────────────────────────────────────────────────────
+
+## 4) Look-At & Aim Rig (with Smoothing)
+**What it does**  
+Creates smooth, lagging “look-at” movement for cameras that track moving objects without jitter.
+
+**Setup:**  
+- Add **Target Null** (named “AIM_TARGET”).  
+- On **Camera Orientation**:
+
+```js
+target = thisComp.layer("AIM_TARGET");
+lag = 6; // smooth factor
+camPos = toWorld(anchorPoint);
+tarPos = target.toWorld(anchorPoint);
+v = tarPos - camPos;
+lookAt(v + (value - v)/lag);
+```
+
+**Variation:**  
+Use `orientation = lookAt(tarPos - camPos);` for instant tracking (no lag).  
+For smoother cinematic results, combine both.
+
+────────────────────────────────────────────────────────────────────────
+
+## 5) Handheld Operator Simulation (Procedural)
+**What it does**  
+Adds realistic shoulder-camera motion: micro-breathing, organic bump, and subtle inertia.
+
+**Setup:**  
+- On Camera **Position** (or a parent Null):
+```js
+amp = 20;  // pixel amplitude
+freq = 1.2; // movement frequency
+seedRandom(index, true);
+t = time*freq*2*Math.PI;
+
+x = amp*Math.sin(t)*0.4;
+y = amp*Math.cos(t*0.8)*0.3;
+z = amp*Math.sin(t*0.3)*0.2;
+
+smoothness = 0.25; // optional motion ease
+smooth(value + [x,y,z], smoothness);
+```
+
+**Tip:** Animate amplitude from 0–20 during handheld segments to fade in/out realism.  
+**Add random drift** with `wiggle(0.1, 5)` for ambient shake.  
+This simulates operator breathing and arm weight shifts.
+
+────────────────────────────────────────────────────────────────────────
+
+## 6) Multi-Axis Master Rig (Professional Hybrid)
+**What it does**  
+Combines orbit, dolly, pan/tilt, and zoom into a master multi-control system—fully parametric and modular.
+
+**Setup:**  
+- Create **CAM_MASTER** (Null).  
+- Add:
+  - Sliders: Orbit Distance, Dolly Offset, Orbit Speed, Zoom, Shake Intensity  
+  - Angle Controls: Pan, Tilt  
+  - Checkbox: Lock Zoom, Enable Shake  
+  - Point Control: Focus Target
+
+**Parent hierarchy:**  
+`CAM_MASTER → CAMERA`.
+
+**Expressions:**
+
+**Camera Position (orbit + dolly):**
+```js
+C = thisComp.layer("CAM_MASTER");
+orbit = C.effect("Orbit Distance")("Slider");
+speed = C.effect("Orbit Speed")("Slider");
+dolly = C.effect("Dolly Offset")("Slider");
+
+x = Math.cos(time*speed*2*Math.PI)*orbit;
+y = 0;
+z = Math.sin(time*speed*2*Math.PI)*orbit + dolly;
+[x,y,z];
+```
+
+**Camera Zoom:**
+```js
+C = thisComp.layer("CAM_MASTER");
+if (C.effect("Lock Zoom")("Checkbox")>0){
+  value;
+}else{
+  C.effect("Zoom")("Slider");
+}
+```
+
+**Camera Orientation (look-at):**
+```js
+target = thisComp.layer("CAM_MASTER").effect("Focus Target")("Point");
+lookAt(target - toWorld(anchorPoint));
+```
+
+**Optional Shake (Position or Orientation):**
+```js
+C=thisComp.layer("CAM_MASTER");
+on=C.effect("Enable Shake")("Checkbox")>0;
+amp=C.effect("Shake Intensity")("Slider");
+freq=1.5;
+seedRandom(index,true);
+wig = on ? wiggle(freq,amp) : [0,0,0];
+value + wig;
+```
+
+**Usage:**
+- Animate Orbit Speed to create cinematic sweeps.
+- Animate Dolly Offset for push/pull.
+- Enable Shake for realism.
+- Adjust Pan/Tilt angles to control framing.
+
+────────────────────────────────────────────────────────────────────────
+
+## 7) Scene-Based Camera Switcher (Automation)
+**What it does**  
+Switches active cameras automatically based on timeline markers or scene ranges.
+
+**Setup:**  
+Add markers to a **Master Null** with names matching cameras (“CamA”, “CamB”).  
+On a “Main Camera” Opacity property:
+
+```js
+ctrl = thisComp.layer("MASTER_CTRL");
+n = 0;
+if (ctrl.marker.numKeys>0){
+  n = ctrl.marker.nearestKey(time).index;
+  if (ctrl.marker.key(n).time > time) n--;
+}
+if (n>0){
+  activeName = ctrl.marker.key(n).comment;
+  activeName == thisLayer.name ? 100 : 0;
+}else{
+  0;
+}
+```
+
+**Usage:**  
+Each camera turns visible only during its marker’s scene. Perfect for pre-cut edits.
+
+────────────────────────────────────────────────────────────────────────
+
+## 8) Gimbal Rig (3-Axis Control)
+**What it does**  
+Emulates real-world gimbals and stabilizers — isolates axes for natural pivoting.
+
+**Setup:**  
+Create three Nulls:  
+- **GIMBAL_YAW** (rotates around Y)  
+- **GIMBAL_PITCH** (rotates around X)  
+- **GIMBAL_ROLL** (rotates around Z)  
+Parent them Yaw → Pitch → Roll → Camera.  
+Add **Angle Controls** for each on a **GIMBAL_CTRL** layer.
+
+**Expressions:**
+```js
+C=thisComp.layer("GIMBAL_CTRL");
+yaw = C.effect("Yaw")("Angle");
+pitch = C.effect("Pitch")("Angle");
+roll = C.effect("Roll")("Angle");
+[yaw, pitch, roll];
+```
+
+**Usage:**  
+Animate the gimbal axes for smooth drone, steadicam, or aircraft-like movement.  
+Link to sliders for live control.
+
+────────────────────────────────────────────────────────────────────────
+
+## 9) Drone/FPV Mode (Cinematic Curves)
+**What it does**  
+Adds aeronautic realism to camera rigs — roll and pitch tied to velocity and curvature.
+
+**Setup:**  
+On **Camera Orientation**:
+```js
+vel = velocity;
+pitch = linear(vel[2], -1000, 1000, -10, 10);
+roll = linear(vel[0], -1000, 1000, 10, -10);
+[value[0]+pitch, value[1], value[2]+roll];
+```
+
+**Use:**  
+For fast, immersive “drone flythroughs” or digital FPV cinematics.
+
+────────────────────────────────────────────────────────────────────────
+
+### 🧪 Practice Exercises
+1. Build a **Multi-Camera Switcher** and animate slider cuts for a mock interview.  
+2. Create an **Auto-Focus Rig** with two moving targets and keyframe rack-focus.  
+3. Combine **Target-Based Dolly Rig** + **Look-At Smoothing** for follow-cam shots.  
+4. Set up a **Gimbal Rig** for a drone-style flythrough and add shake.  
+5. Use **Scene Switcher** markers to pre-cut a full sequence in one comp.
+
+────────────────────────────────────────────────────────────────────────
+
+### 🔧 Troubleshooting
+- **Camera jumps between rigs:** freeze transforms before switching or use hold keyframes.  
+- **Focus flicker:** limit Focus Offset range or smooth() the Focus Distance.  
+- **Shake breaks look-at:** apply shake to a parent Null instead of the camera directly.  
+- **Multi-cam lag:** use proxy cameras with lower res during edit, then relink to masters.  
+- **Orbit drift:** keep the camera and target aligned — zero Orientation before parenting.
+
+────────────────────────────────────────────────────────────────────────
+
+### 🎬 Summary
+Professional camera rigs go beyond ease—they enable storytelling.  
+From auto-tracking to rack-focus, these systems give After Effects artists true cinematographic control, blending math, motion, and creative instinct.  
+Once mastered, you’ll think less like an animator and more like a **director of photography** — commanding movement, focus, and light with precision.
+
+> 🪄 *Next:* “Environmental FX & Camera Systems” expands on these rigs, connecting them to atmospheric and lighting systems for cinematic realism.
 ```
