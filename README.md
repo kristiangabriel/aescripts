@@ -1,6 +1,19 @@
 ![After Effects Expressions Handbook Banner](https://i.imgur.com/Ek9IkRl.jpeg)
 # 🎬 AE Scripts & Expressions Handbook – Kristian Gabriel
-Welcome to your central library of After Effects expressions and micro-training modules. My name is Kristian Gabriel, Creative Director,Graphic & Motion Design Artist, and other things they haven't defined yet. LOL. The following is a WORK IN PROGRESS and something I wish I would have had when I was learning After Effects. Once again, this is a work in progress and there are definitely issues and errors. Please bring them to my attention and I would be happy to fix them. I fully acknowledge that every motion designer will do and code things differently and thats okay! At the end of the day its about all of us getting our work done and meeting those deadlines. I have information, you have information, we all have information and between...hopefully all this can help those who need it. Anyways! Each category includes explanations, examples, and professional shortcuts for motion design, rigging, and automation. Hope you have fun and enjoy!
+Welcome to your central library of After Effects expressions and micro-training modules.
+My name is Kristian Gabriel — Creative Director, Graphic & Motion Design Artist, and a few other things they haven’t quite defined yet LOL.
+
+The following is a work in progress—something I wish I’d had when I was learning After Effects.
+There will be issues and errors along the way, so please let me know if you spot any; I’ll be happy to fix them.
+
+I fully acknowledge that every motion designer codes and builds differently, and that’s okay!
+At the end of the day it’s about all of us getting our work done and meeting deadlines.
+
+I have information, you have information, we all have information — and between us, hopefully this collection helps whoever needs it.
+
+Each category includes explanations, examples, and professional shortcuts for motion design, rigging, and automation.
+
+Have fun, experiment, and enjoy!
 
 ---
 
