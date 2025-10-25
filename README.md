@@ -465,3 +465,204 @@ if(n>0){
 
 Next → **Text & Type**: apply these same motion principles to typography (per-character delays, overshoots, and rhythm).
 ```
+```markdown
+## 🔠 Text & Type — Practical Motion Recipes
+This is your typography lab. Each recipe below includes full explanations, step-by-step setup, tuning tips, and real-world usage.
+
+────────────────────────────────────────────────────────────────────────
+
+### 🧭 Working with Text Expressions
+Text layers have two main areas for expressions:
+
+• **Source Text**  →  changes the text itself (typewriter, counters, scrambles).  
+• **Animators + Expression Selector**  →  controls per-character/word/line transforms (opacity, scale, position, color).
+
+Basic rule:  *Source Text* = modify content.  
+*Animators* = modify motion/look per character.
+
+────────────────────────────────────────────────────────────────────────
+
+### 1) Typewriter — character by character
+**What it does:** reveals letters one at a time, like live typing.  
+**Where:** on **Source Text**.  
+**How:**
+1. Type your full sentence.  
+2. Alt/Option-click Source Text stopwatch.  
+3. Paste the code below.
+
+```js
+speed=12;                          // characters per second
+s=value.toString();
+n=Math.floor((time-inPoint)*speed);
+n=clamp(n,0,s.length);
+s.substr(0,n);
+```
+**Optional cursor:**  
+```js
+speed=12;
+cursorOn=Math.sin(time*8)>0;
+s=value.toString();
+n=Math.floor((time-inPoint)*speed);
+n=clamp(n,0,s.length);
+s.substr(0,n)+(cursorOn?"|":"");
+```
+**Tune:** adjust **speed**.  
+**Example:**  dialogue bubbles, console text, subtitles.
+
+────────────────────────────────────────────────────────────────────────
+
+### 2) Typewriter — word by word
+**What it does:** reveals full words sequentially.  
+**Where:** **Source Text**.
+
+```js
+delay=0.20;                         // seconds per word
+words=value.toString().split(" ");
+count=Math.floor((time-inPoint)/delay);
+count=clamp(count,0,words.length);
+words.slice(0,count).join(" ");
+```
+**Use:** taglines, lyric subtitles, timed quotes.
+
+────────────────────────────────────────────────────────────────────────
+
+### 3) Character Cascade — fade/slide reveal
+**What it does:** each character (or word/line) appears with offset timing and motion.  
+**Where:** in a **Text Animator** with *Opacity 0%* and optional *Position [0,20]*.  
+Add an **Expression Selector** and paste on **Amount**.
+
+```js
+delay=0.03;rise=0.15;
+t=time-inPoint-(textIndex-1)*delay;
+ease(t,0,rise,0,100);
+```
+**Tune:** delay = spacing, rise = duration.  
+**Example:** kinetic subtitles, lyric reveals, info lists.
+
+────────────────────────────────────────────────────────────────────────
+
+### 4) Elastic Overshoot per Character
+**What it does:** each character pops in with a bounce.  
+**Where:** Text Animator → Scale (+40,+40) → Expression Selector → Amount.
+
+```js
+delay=0.035;amp=60;freq=5;decay=6;
+t=time-inPoint-(textIndex-1)*delay;
+kick=amp*Math.sin(freq*t*2*Math.PI)*Math.exp(-decay*t);
+clamp(kick,0,100);
+```
+**Tune:**  
+• amp → strength  
+• freq → bounces  
+• decay → settle speed  
+**Example:** energetic headlines, emoji pops, promo titles.
+
+────────────────────────────────────────────────────────────────────────
+
+### 5) Word / Line Stagger (reusable)
+**What it does:** same cascade logic, usable for Characters, Words, or Lines depending on “Based On.”  
+**Where:** any Text Animator → Expression Selector → Amount.
+
+```js
+delay=0.08;dur=0.18;
+t=time-inPoint-(textIndex-1)*delay;
+ease(t,0,dur,0,100);
+```
+Switch **Based On** to Words or Lines as needed.  
+**Example:** multiline intros, caption slides.
+
+────────────────────────────────────────────────────────────────────────
+
+### 6) Random Scramble → Resolve
+**What it does:** scrambles characters then resolves to the final text.  
+**Where:** **Source Text**.
+
+```js
+charset="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+stepDur=0.05;
+txt=value.toString();
+elapsed=Math.max(0,time-inPoint);
+revealCount=Math.floor(elapsed/stepDur);
+out="";
+for(i=0;i<txt.length;i++){
+ if(i<revealCount) out+=txt[i];
+ else if(txt[i]==" ") out+=" ";
+ else{
+  seedRandom(i+Math.floor(time*20),true);
+  out+=charset[Math.floor(random(charset.length))];
+ }
+}
+out;
+```
+**Tune:** smaller stepDur = faster resolve.  
+**Example:** HUDs, sci-fi titles, digital counters.
+
+────────────────────────────────────────────────────────────────────────
+
+### 7) Numeric Counter
+**What it does:** counts from start → end smoothly.  
+**Where:** **Source Text**.
+
+```js
+start=0;end=1000;
+t0=inPoint;t1=inPoint+2;
+decimals=0;
+v=linear(time,t0,t1,start,end);
+v=(time<t0)?start:(time>t1)?end:v;
+prefix="";suffix="";
+formatted=decimals>0?v.toFixed(decimals):Math.round(v).toString();
+prefix+formatted+suffix;
+```
+**Example:** progress %, dollar totals, milliseconds.  
+Change prefix/suffix for units or currency.
+
+────────────────────────────────────────────────────────────────────────
+
+### 8) Slide-Up + Fade
+**What it does:** each character slides upward and fades in.  
+**Where:** Text Animator with *Position [0,20]* and *Opacity 0%*, Expression Selector → Amount.
+
+```js
+delay=0.025;dur=0.12;
+t=time-inPoint-(textIndex-1)*delay;
+ease(t,0,dur,0,100);
+```
+**Example:** modern UI titles, app onboarding text, credits.
+
+────────────────────────────────────────────────────────────────────────
+
+### 9) Color Pulse Accent
+**What it does:** adds a brief color pulse as text reveals.  
+**Where:** Text Animator → Fill Color RGB → Expression Selector → Amount.
+
+```js
+delay=0.03;dur=0.10;overshoot=120;
+t=time-inPoint-(textIndex-1)*delay;
+val=ease(t,0,dur,0,100);
+(Math.abs(Math.sin(t*6))>0.9)?overshoot:val;
+```
+**Tip:** keep overshoot ≤120 for subtle shimmer.  
+**Example:** highlight key words, lyric beats.
+
+────────────────────────────────────────────────────────────────────────
+
+### 🔧 Troubleshooting
+• Nothing happens → confirm you’re on the correct property (Source Text vs. Expression Selector Amount).  
+• All text appears instantly → check “Based On” in selector.  
+• Timing off → tweak delay/dur.  
+• Scramble unreadable → shorten stepDur.  
+• Counter jumps → adjust t0/t1 and decimals.
+
+────────────────────────────────────────────────────────────────────────
+
+### 🧪 Quick Exercises
+1. Create a typewriter headline with a blinking cursor.  
+2. Add a slide-up cascade reveal (delay 0.02 s).  
+3. Combine elastic overshoot with color pulse for a lively promo title.  
+4. Make a numeric counter showing $0 → $999 over 3 s.  
+5. Try a scramble→resolve effect for a “SYSTEM ONLINE” text.
+
+────────────────────────────────────────────────────────────────────────
+
+Next → **Motion & Physics:** explore realistic drifts, inertia, and simulated forces for both text and graphics.
+```
