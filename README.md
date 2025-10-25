@@ -43,8 +43,6 @@ Have fun, experiment, and enjoy!
 
 ### 🧠 What Is an Expression?
 
-### 🧠 What Is an Expression?
-
 Expressions are tiny bits of code that control animation inside After Effects. Instead of adding dozens of keyframes, you can describe how something behaves using a simple line or two of logic. At their core, expressions tell a property how to change over time—they act as small formulas that drive motion, behavior, or relationships between layers.
 
 They’re written in a simplified version of JavaScript, customized for motion graphics. You don’t need to be a programmer; just understand a few basics—how to refer to a value, do simple math, and connect one property to another.
