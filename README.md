@@ -804,21 +804,30 @@ if (y > floor){
 
 ────────────────────────────────────────────────────────────────────────
 
-### 6) Orbit / Centripetal Force
-**What it does:** keeps a layer orbiting another layer’s position in circular motion.  
-**Where:** Position.
+### 6) 🌌 Orbit / Centripetal Force
+
+**What it does:** Keeps a layer orbiting around another layer’s position in circular motion.  
+**Where to apply:** *Position* property of the orbiting layer.
 
 ```js
-center = thisComp.layer("CENTER").transform.position;
-radius = 200;
-speed  = 1.2;       // rotations per second
-angle  = time*speed*2*Math.PI;
-[center[0] + Math.cos(angle)*radius,
- center[1] + Math.sin(angle)*radius];
-```
+// Orbit or circular motion around another layer
 
-**Tip:** animate `radius` or `speed` for dynamic orbits.  
-**Example:** spinning satellites, atomic diagrams, UI radar sweeps.
+// The layer to orbit around (rename as needed)
+center = thisComp.layer("CENTER").transform.position;
+
+// Controls
+radius = 200;             // distance from the center (pixels)
+speed  = 1.2;             // rotations per second
+
+// Calculate rotation angle
+angle = time * speed * 2 * Math.PI;
+
+// Calculate new position using sine and cosine
+[
+  center[0] + Math.cos(angle) * radius,
+  center[1] + Math.sin(angle) * radius
+]
+```
 
 ────────────────────────────────────────────────────────────────────────
 
