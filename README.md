@@ -7,7 +7,7 @@ Welcome to your central library of After Effects expressions and micro-training 
 - [Introduction to Expressions](#-introduction-to-after-effects-expressions)
 - [Core Animation](#-core-animation)
 - [Core Animation – Part II: Practical Motion Recipes](#core-animation-part-ii)
-- [Text & Type](#-text--type)
+- [Text & Type](#text-and-type)
 - [Motion & Physics](#-motion--physics)
 - [Controllers & Rigging](#-controllers--rigging)
 - [Color & Lighting](#-color--lighting)
@@ -465,6 +465,7 @@ if(n>0){
 
 Next → **Text & Type**: apply these same motion principles to typography (per-character delays, overshoots, and rhythm).
 
+<a id="text-and-type"></a>
 ## 🔠 Text & Type — Practical Motion Recipes
 This is your typography lab. Each recipe below includes full explanations, step-by-step setup, tuning tips, and real-world usage.
 
