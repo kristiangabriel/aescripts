@@ -9,7 +9,7 @@ Welcome to your central library of After Effects expressions and micro-training 
 - [Core Animation – Part II: Practical Motion Recipes](#core-animation-part-ii)
 - [Text & Type](#text-and-type)
 - [Motion & Physics](#motion-and-physics)
-- [Controllers & Rigging](#-controllers--rigging)
+- [Controllers & Rigging](#controllers-and-rigging)
 - [Color & Lighting](#-color--lighting)
 - [Time & Looping](#-time--looping)
 - [Utility & Automation](#-utility--automation)
@@ -889,4 +889,308 @@ else {
 ────────────────────────────────────────────────────────────────────────
 
 Next → **Controllers & Rigging**: learn to centralize multiple physics expressions under shared sliders and layer controls.
+
+<a id="controllers-and-rigging"></a>
+## 🎛️ Controllers & Rigging — Practical Motion Recipes
+Centralize control of many layers, create reusable UI (**sliders, checkboxes, angles, colors, points**), and build lightweight rigs (stagger systems, look-at targets, simple 2-bone IK, state blends, and global timing). This chapter gives you repeatable patterns that scale from one layer to an entire sequence.
+
+────────────────────────────────────────────────────────────────────────
+
+### 🧭 Controller Philosophy
+- **One place to art-direct:** a single CTRL layer drives many dependent expressions.
+- **Non-destructive:** keyframe the child layers as usual; controllers *add* behavior.
+- **Name discipline wins:** consistent effect names prevent broken pickwhips.
+
+**Recommended controller layer**
+- Add a **Null** named **CTRL**.
+- Add the following controls (Effects > Expression Controls):
+  - Slider: **Amp**, **Freq**, **Decay** (motion DNA, reused everywhere)
+  - Slider: **Global Delay**, **Global Speed**
+  - Checkbox: **Enable Rig**
+  - Angle Control: **Aim**
+  - Color Control: **Primary Color**
+  - Point Control: **Target**
+  
+You’ll reference controls like:
+```js
+C = thisComp.layer("CTRL");
+amp   = C.effect("Amp")("Slider");
+freq  = C.effect("Freq")("Slider");
+decay = C.effect("Decay")("Slider");
+```
+
+────────────────────────────────────────────────────────────────────────
+
+### 1) Master On/Off (safety switch)
+**What it does:** cleanly gates an expression so you can toggle a rig globally.
+
+**Where:** paste on any driven property (Position/Scale/Rotation/Opacity).
+
+```js
+C = thisComp.layer("CTRL");
+on = C.effect("Enable Rig")("Checkbox") > 0;
+on ? value : valueAtTime(time); // same value, but no added behavior when off
+```
+
+**Tip:** Use this at the top of “spicy” expressions. Flip one checkbox to compare rigged vs. vanilla motion.
+
+────────────────────────────────────────────────────────────────────────
+
+### 2) Global Amplitude / Timing (central art direction)
+**What it does:** lets **Amp / Freq / Decay** act as global dials across your comp.
+
+**Where:** wrap existing bounce/elastic snippets with globals.
+
+```js
+C=thisComp.layer("CTRL");
+A=C.effect("Amp")("Slider");
+F=C.effect("Freq")("Slider");
+D=C.effect("Decay")("Slider");
+
+t=time - inPoint;
+value + A*Math.sin(F*t*2*Math.PI)*Math.exp(-D*t);
+```
+
+**Use:** tweak three numbers to retime a whole sequence without touching child layers.
+
+────────────────────────────────────────────────────────────────────────
+
+### 3) Global Stagger (delay everything from one slider)
+**What it does:** offset many layers by a controllable delay.
+
+**Where:** paste on any animated property of followers.
+
+```js
+C=thisComp.layer("CTRL");
+dPer = C.effect("Global Delay")("Slider")/100; // seconds per index
+lag  = (thisLayer.index - 1) * dPer;
+valueAtTime(time - lag);
+```
+
+**Tip:** Duplicate layers, reorder to re-sequence the wave. The slider changes flow in one move.
+
+────────────────────────────────────────────────────────────────────────
+
+### 4) Marker-Driven Stepper (choreograph beats from the controller)
+**What it does:** uses **CTRL layer markers** as global timing cues for all children.
+
+**Setup:** add markers on **CTRL** where hits should land.  
+**Where:** paste on children’s properties.
+
+```js
+C = thisComp.layer("CTRL");
+n = 0;
+if (C.marker.numKeys>0){
+  n = C.marker.nearestKey(time).index;
+  if (C.marker.key(n).time > time) n--;
+}
+if (n>0){
+  t=time - C.marker.key(n).time;
+  // simple pop; swap your favorite hit here
+  value + [0,0] + (10*Math.sin(6*t*2*Math.PI)*Math.exp(-5*t));
+}else{
+  value
+}
+```
+
+**Use:** edit one marker track → entire comp reacts.
+
+────────────────────────────────────────────────────────────────────────
+
+### 5) Index-Aware Rig (smart variations with one expression)
+**What it does:** gives each duplicate its own offset/scale based on **layer index** and a single controller slider.
+
+```js
+C=thisComp.layer("CTRL");
+spread = C.effect("Global Delay")("Slider")/100; // seconds
+seedRandom(index, true);
+perLayer = (index-1) * spread;
+valueAtTime(time - perLayer);
+```
+
+**Use:** cards, dots, list items—one expression scales to N layers.
+
+────────────────────────────────────────────────────────────────────────
+
+### 6) Look-At (2D target aiming)
+**What it does:** rotate a layer to face a **Target** point on CTRL.
+
+**Setup:** on **CTRL**, set a **Point Control** named **Target**.  
+**Where:** paste on **Rotation** of the aiming layer.
+
+```js
+C=thisComp.layer("CTRL");
+T=C.effect("Target")("Point");
+p = toWorld(anchorPoint);
+v = T - p;
+radiansToDegrees(Math.atan2(v[1], v[0]));
+```
+
+**Extras:** add an **Aim** Angle Control to add/subtract an offset; clamp or damp for smoother aiming.
+
+────────────────────────────────────────────────────────────────────────
+
+### 7) Follow with Lag + Damping (but controllable)
+**What it does:** smooth follow of a moving **Target** point with time lag and damping.
+
+**Where:** paste on **Position** of follower.
+
+```js
+C=thisComp.layer("CTRL");
+T=C.effect("Target")("Point");
+lag   = 0.18; // seconds
+damp  = 8;    // higher = snappier
+goal  = T;
+base  = valueAtTime(time - lag);
+base + (goal - base)/damp;
+```
+
+**Use:** soft camera rigs, secondary elements trailing primaries.
+
+────────────────────────────────────────────────────────────────────────
+
+### 8) 2-Bone IK (simple 2D limb rig)
+**What it does:** upper/lower bones rotate to reach a **Target** (law of cosines).  
+**Setup:**
+- Create 3 nulls: **Upper**, **Lower**, **Effector** (the end point to reach).
+- Set **Upper** as parent of **Lower**; **Lower** parent of your hand/foot layer.
+- On **CTRL**, reuse **Target** (Point Control) as the effector target.
+
+**Paste on Upper ROTATION:**
+```js
+C=thisComp.layer("CTRL");
+A=thisLayer;              // Upper
+B=thisComp.layer("Lower");// Lower (child)
+T=C.effect("Target")("Point");
+
+a = A.toWorld(A.anchorPoint);
+b = B.toWorld(B.anchorPoint);
+t = T;
+
+L1 = length(B.anchorPoint - A.anchorPoint); // approximate bone lengths in layer space
+L2 = length(B.parent.transform.position);   // or set fixed numbers if preferred
+d  = length(t - a);
+
+d = clamp(d, Math.abs(L1-L2)+0.001, L1+L2-0.001); // triangle inequality
+
+angA = Math.acos( (L1*L1 + d*d - L2*L2) / (2*L1*d) );
+angAToTarget = Math.atan2((t - a)[1], (t - a)[0]);
+radiansToDegrees(angAToTarget - angA);
+```
+
+**Paste on Lower ROTATION:**
+```js
+C=thisComp.layer("CTRL");
+A=thisLayer.parent;   // Upper
+B=thisLayer;          // Lower
+T=C.effect("Target")("Point");
+
+a = A.toWorld(A.anchorPoint);
+b = B.toWorld(B.anchorPoint);
+t = T;
+
+L1 = length(B.anchorPoint - A.anchorPoint);
+L2 = length(B.anchorPoint - B.toWorld(B.anchorPoint)); // fallback
+d  = length(t - a);
+
+d = clamp(d, Math.abs(L1-L2)+0.001, L1+L2-0.001);
+
+angB = Math.acos( (L1*L1 + L2*L2 - d*d) / (2*L1*L2) );
+- radiansToDegrees(Math.PI - angB);
+```
+
+**Notes:** AE layer spaces can vary by art; for production, measure L1/L2 once and hardcode. Add a **Pole** control (Point) to guide elbow direction if needed (by biasing angles toward pole).
+
+────────────────────────────────────────────────────────────────────────
+
+### 9) Slider-Driven State Blend (morph between two poses/timings)
+**What it does:** blends between **State A** and **State B** using a single slider on CTRL.
+
+**Setup:** on **CTRL**, add **Slider** named **State** (0–100).  
+**Where:** paste on any numeric property you want to blend.
+
+```js
+C=thisComp.layer("CTRL");
+S=C.effect("State")("Slider")/100; // 0..1
+
+A = valueAtTime(inPoint + 0.0);  // pose/time A (can be keyframed time)
+B = valueAtTime(inPoint + 0.5);  // pose/time B (or a different comp time)
+
+linear(S, 0, 1, A, B);
+```
+
+**Use:** one slider morphs an icon from compact → expanded; or blends between two timing offsets.
+
+────────────────────────────────────────────────────────────────────────
+
+### 10) Global Color Rig (palette from a single control)
+**What it does:** all fills/strokes pick their color from **CTRL**.
+
+**Where:** on shape/text **Fill Color** expression.
+
+```js
+C=thisComp.layer("CTRL");
+C.effect("Primary Color")("Color");
+```
+
+**Use:** recolor an entire styleframe with one click.
+
+────────────────────────────────────────────────────────────────────────
+
+### 11) Time-Remap Scrubber (controller as a timeline)
+**What it does:** one slider scrubs a precomp’s animation.
+
+**Setup:** precomp a clip, enable **Time-Remap** (Layer > Time > Enable Time Remapping).  
+On **CTRL**, add **Slider** named **Playhead** (0–100).
+
+**Paste on the precomp’s Time Remap:**
+```js
+C = thisComp.layer("CTRL");
+S = C.effect("Playhead")("Slider");   // 0..100
+t0 = 0; 
+t1 = thisLayer.source.duration;       // full source range
+linear(S, 0, 100, t0, t1);
+```
+
+**Use:** sequencer control, scrubbing a montage, quick A/B timing.
+
+────────────────────────────────────────────────────────────────────────
+
+### 12) Comp-Wide Speed Control (slow-mo / time-crunch)
+**What it does:** multiplies time for expressions globally.
+
+**Setup:** on **CTRL**, add **Slider** named **Global Speed** (100 = normal).
+
+**Pattern to use inside any expression:**
+```js
+C=thisComp.layer("CTRL");
+speed = C.effect("Global Speed")("Slider")/100; // 0.5=half-speed, 2=double
+t = inPoint + (time - inPoint)*speed;
+// then use t instead of time:
+valueAtTime(t);
+```
+
+**Use:** quickly slow everything down for review or ramp up for previews.
+
+────────────────────────────────────────────────────────────────────────
+
+### 🔧 Troubleshooting
+- **“Nothing changes”** → verify effect names on CTRL (case-sensitive) and target layer names (e.g., “CTRL”, “Leader”).  
+- **“My rig fights keyframes”** → keep base keyframes minimal; let controllers add behavior, not replace every curve.  
+- **“Angles flip”** → clamp inputs; avoid gimbal by staying in 2D for simple look-at and IK.  
+- **“IK jitters”** → lock bone lengths (hardcode L1/L2), add a Pole bias, or slightly damp target motion.  
+- **“Performance dips”** → reduce nested `valueAtTime` calls; centralize computations (cache CTRL variables at top).
+
+────────────────────────────────────────────────────────────────────────
+
+### 🧪 Practice Drills
+1) Build a **Global Stagger** rig that offsets 12 cards—art-direct the wave from one slider.  
+2) Create a **Look-At** pointer that tracks a CTRL Target; add a small lag/damp to avoid twitch.  
+3) Rig a **State Blend** slider that morphs an icon from compact to expanded.  
+4) Drive a **Time-Remap Scrubber** for a montage precomp—set “Playhead” to 0–100 for students to explore timing.  
+5) Prototype a simple **2-bone IK** arm reaching for the Target; add a Pole to steer elbow direction.
+
+────────────────────────────────────────────────────────────────────────
+
+Next → **Color & Lighting**: build global palettes, light-linked responses, and auto-toning rigs driven from a single controller.
 ```
