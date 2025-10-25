@@ -1,17 +1,26 @@
-# 🎬 Kristian Gabriel — AE Scripts & Expressions Handbook
+# 🎬 Kristian Gabriel – AE Scripts & Expressions Handbook
 
-Welcome! This page is a living handbook of After Effects expressions with short, copy-ready snippets and how to use them.
-
-## Table of Contents
-- [Elastic & Bounce](#elastic--bounce)
-- [Text & Type](#text--type)
-- [Utility & Rigs](#utility--rigs)
+Welcome to your central library of After Effects expressions and micro-training modules.  
+Each category includes explanations, examples, and professional shortcuts for motion design, rigging, and automation.
 
 ---
 
-## Elastic & Bounce
+## 📘 Table of Contents
+- [Core Animation](#core-animation)
+- [Text & Type](#text--type)
+- [Motion & Physics](#motion--physics)
+- [Controllers & Rigging](#controllers--rigging)
+- [Color & Lighting](#color--lighting)
+- [Time & Looping](#time--looping)
+- [Utility & Automation](#utility--automation)
+- [Project Management / Organization](#project-management--organization)
 
-### Elastic Overshoot (paste on Scale/Position/Rotation)
+---
+
+## 🎬 Core Animation
+Elastic, bounce, damping, and motion-flow expressions for shape and logo animation.
+
+### Elastic Overshoot
 ```js
 amp = 20; freq = 3; decay = 5;
 value + amp*Math.sin(freq*time*Math.PI)*Math.exp(-decay*time);
