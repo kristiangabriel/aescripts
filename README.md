@@ -8,7 +8,7 @@ Welcome to your central library of After Effects expressions and micro-training 
 - [Core Animation](#-core-animation)
 - [Core Animation – Part II: Practical Motion Recipes](#core-animation-part-ii)
 - [Text & Type](#text-and-type)
-- [Motion & Physics](#-motion--physics)
+- [Motion & Physics](#motion-and-physics)
 - [Controllers & Rigging](#-controllers--rigging)
 - [Color & Lighting](#-color--lighting)
 - [Time & Looping](#-time--looping)
