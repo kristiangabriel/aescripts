@@ -12,6 +12,7 @@ Welcome to your central library of After Effects expressions and micro-training 
 - [Controllers & Rigging](#controllers-and-rigging)
 - [Color & Lighting](#color-and-lighting)
 - [Environmental FX & Camera Systems](#environmental-fx-and-camera-systems)
+- [Professional Camera Rigging](#professional-camera-rigging)
 - [Time & Looping](#-time--looping)
 - [Utility & Automation](#-utility--automation)
 - [Project Management / Organization](#-project-management--organization)
@@ -1768,4 +1769,246 @@ Add a **Rectangle** scaled to create letterbox bars; tie its **Size** to comp he
 ────────────────────────────────────────────────────────────────────────
 
 Next → **Time & Looping**: global speed controls, beats, markers, and procedural time tricks for complex sequences.
+
+
+<a id="professional-camera-rigging"></a>
+## 🎥 Professional Camera Rigging — From Simple to Advanced
+Camera rigs are the backbone of cinematic storytelling in After Effects. They turn a basic virtual camera into a responsive, art-directable instrument — letting you move, orbit, zoom, dolly, and tilt with tactile precision. Without a rig, your camera’s controls live on separate properties (Position, Point of Interest, Zoom, Rotation), making motion clunky and hard to repeat. Rigging consolidates those into a single Null (or stack of Nulls) with sliders, angles, and constraints.
+
+────────────────────────────────────────────────────────────────────────
+
+### 🧭 Why Rig a Camera?
+- **Precision:** separates local vs. global transforms (pan vs. orbit vs. dolly).  
+- **Ease of Animation:** keyframe 2–3 properties instead of six.  
+- **Physical Realism:** rigs emulate crane arms, dollies, tripods, or handheld systems.  
+- **Reusability:** the same rig can serve multiple comps—just swap the subject.  
+- **Protection:** prevents accidental zoom drift or point-of-interest flips.
+
+In real productions, a camera rig behaves like a physical device — each control has a specific role (orbit, pan, tilt, dolly, focus, zoom). Rigs let artists “drive” the camera intuitively rather than fighting it.
+
+────────────────────────────────────────────────────────────────────────
+
+## 1) Simple Camera Rig — Quick Creative Setup
+**Goal:** a fast, artist-friendly rig with just one Null controller for Position, Orbit, and Zoom.
+
+### 🧩 Build Steps
+1. Create a **Camera** (Layer → New → Camera). Choose a focal length you like (35mm is a good start).  
+2. Create a **Null Object** (Layer → New → Null Object) and make it **3D**.  
+3. Rename it **CAM_CTRL**.  
+4. Parent the **Camera** to **CAM_CTRL**.
+
+Now the **Null** drives the camera. Rotating or moving CAM_CTRL moves the camera rig as if it were a real-world mount.
+
+### ⚙️ Add Expression Controls to CAM_CTRL
+Add these via *Effect > Expression Controls*:
+- **Slider Control** → rename it **Zoom**
+- **Slider Control** → rename it **Dolly**
+- **Angle Control** → rename it **Tilt**
+- **Angle Control** → rename it **Pan**
+
+### 🧠 Link the Camera
+Select the **Camera** and Alt/Option-click the following properties:
+
+**Zoom (on Camera):**
+```js
+thisComp.layer("CAM_CTRL").effect("Zoom")("Slider");
+```
+
+**Point of Interest (optional):**
+```js
+p = thisComp.layer("CAM_CTRL").toWorld([0,0,0]);
+p;
+```
+
+**Position (to include a dolly control):**
+```js
+ctrl = thisComp.layer("CAM_CTRL");
+dolly = ctrl.effect("Dolly")("Slider");
+value + [0, 0, dolly];
+```
+
+Now animating the **Zoom** or **Dolly** sliders creates beautiful camera pushes or pull-backs without manual coordinate editing.
+
+### 💡 Tip: Lock Zoom to Position Depth
+If you want zoom to move with dolly (for natural perspective), pickwhip the **Position Z** property directly to the **Zoom** slider:
+```
+[0,0,transform.position[2]] + [0,0,effect("Zoom")("Slider")];
+```
+or simply:
+```js
+[0, 0, thisComp.layer("CAM_CTRL").effect("Zoom")("Slider")];
+```
+
+### ✨ Simple Rig Summary
+- **Fast setup** (less than a minute)
+- **Perfect for** product rotations, UI fly-ins, and motion graphics shots.
+- **Drawback:** lacks axis separation and fine-tuned speed/damping.
+
+────────────────────────────────────────────────────────────────────────
+
+## 2) Advanced Professional Camera Rig — Studio-Grade Build
+Now let’s design a modular, multi-control system — the kind used on real broadcast and film motion projects. It has:
+- Layered controls (orbit, dolly, tilt, pan)
+- Zoom, shake, focus, aim
+- Lock toggles (checkboxes)
+- Proper separation of axes
+
+### 🧩 Step 1: Base Hierarchy
+Create:
+- **Camera**
+- **Nulls:**
+  1. **RIG_MASTER** (global transform)
+  2. **RIG_ORBIT** (handles orbit/rotation)
+  3. **RIG_DOLLY** (handles push/pull)
+  4. **RIG_PAN_TILT** (handles angular motion)
+  5. **RIG_SHAKE** (optional camera jitter)
+
+Parent them as follows:
+
+```
+RIG_MASTER → RIG_ORBIT → RIG_DOLLY → RIG_PAN_TILT → Camera → RIG_SHAKE
+```
+
+### 🧩 Step 2: Add Controls (on RIG_MASTER)
+Add these Expression Controls:
+- **Slider**: Zoom, Dolly, Orbit Distance, Shake Intensity  
+- **Angle**: Pan, Tilt  
+- **Checkbox**: Lock Zoom, Enable Shake  
+- **Point Control**: Target (for “look-at” mode)  
+- **Slider**: Focus Distance (optional for DOF)  
+- **Slider**: Handheld Frequency  
+
+### 🧩 Step 3: Hook Up Expressions
+
+#### Camera Zoom
+```js
+C = thisComp.layer("RIG_MASTER");
+Z = C.effect("Zoom")("Slider");
+if (C.effect("Lock Zoom")("Checkbox") > 0){
+  value; // keep native zoom
+}else{
+  Z;
+}
+```
+
+#### Dolly (push-pull)
+Paste on **RIG_DOLLY → Position**:
+```js
+C = thisComp.layer("RIG_MASTER");
+D = C.effect("Dolly")("Slider");
+value + [0,0,D];
+```
+
+#### Orbit Motion (rotate around target)
+Paste on **RIG_ORBIT → Rotation Y**:
+```js
+C = thisComp.layer("RIG_MASTER");
+orbit = C.effect("Orbit Distance")("Slider");
+time*orbit*10; // slow orbit; animate slider for rotation rate
+```
+
+#### Pan and Tilt (local orientation)
+Paste on **RIG_PAN_TILT → Rotation**:
+```js
+C = thisComp.layer("RIG_MASTER");
+p = C.effect("Pan")("Angle");
+t = C.effect("Tilt")("Angle");
+[p,t,0];
+```
+
+#### Shake (micro handheld)
+Paste on **RIG_SHAKE → Position**:
+```js
+C = thisComp.layer("RIG_MASTER");
+on = C.effect("Enable Shake")("Checkbox") > 0;
+amp = C.effect("Shake Intensity")("Slider")/100;
+freq = C.effect("Handheld Frequency")("Slider");
+seedRandom(index,true);
+offset = [amp*Math.sin(time*freq*2*Math.PI),
+          amp*Math.sin((time+0.33)*freq*2*Math.PI),
+          amp*Math.sin((time+0.77)*freq*1.3*Math.PI)];
+value + (on ? offset : [0,0,0]);
+```
+
+#### Focus Distance (for DOF)
+Paste on **Camera > Focus Distance**:
+```js
+C = thisComp.layer("RIG_MASTER");
+C.effect("Focus Distance")("Slider");
+```
+
+#### Look-At Target (optional)
+Paste on **Camera > Point of Interest**:
+```js
+C = thisComp.layer("RIG_MASTER");
+C.effect("Target")("Point");
+```
+
+Now you have a complete cinematic rig — every core control on one layer.
+
+────────────────────────────────────────────────────────────────────────
+
+### ⚙️ Using the Rig
+- **Orbit:** Keyframe “Orbit Distance” for smooth turntables or parallax pans.  
+- **Zoom:** Animate for focal length changes or dolly zoom effects.  
+- **Pan/Tilt:** Use for responsive camera gestures (follows subject).  
+- **Dolly:** Creates true Z-space travel without lens distortion.  
+- **Shake:** Toggle on for realism; off for locked-off shots.  
+- **Focus:** Connect to a target null for automatic rack focus.  
+
+### 🔒 Zoom Locking Explained
+Zoom changes lens field of view (FOV). Position Z changes spatial depth.  
+If you want to “lock” zoom to physical motion, link **Zoom** to Position Z via a pickwhip:
+```
+[0,0,transform.position[2]] + [0,0,effect("Zoom")("Slider")];
+```
+That ensures the zoom follows the camera’s physical distance rather than lens distortion, giving a natural “tripod dolly” effect.
+
+────────────────────────────────────────────────────────────────────────
+
+### 🧩 Step 4: Add a Unified Dashboard
+To make the rig readable:
+1. Add color labels to each Null:
+   - MASTER = Cyan
+   - ORBIT = Yellow
+   - DOLLY = Magenta
+   - PAN_TILT = Green
+   - SHAKE = Red
+2. Lock the camera to prevent accidental transform edits.
+3. Parent the group to a “Scene Root” Null if working in multi-camera scenes.
+
+────────────────────────────────────────────────────────────────────────
+
+### 💡 Pro Tips
+- **Bake or Link?** Bake the camera animation only when delivering final composites; otherwise, keep linked for art direction flexibility.  
+- **Null sizes:** scale Nulls up for visual clarity in the comp.  
+- **Target transitions:** for scene cuts, duplicate the RIG_MASTER with new settings rather than overwriting mid-shot.  
+- **Add Auto-Frame:** link the RIG_MASTER Position to the BoundingBox of the subject layer to auto-center the camera as the subject moves.
+
+────────────────────────────────────────────────────────────────────────
+
+### 🧪 Practice Exercises
+1. Build the Simple Camera Rig in a clean comp and keyframe Zoom + Dolly together for a smooth “crash zoom.”  
+2. Build the Advanced Rig with all Nulls and Controls; orbit a subject while toggling Shake on/off.  
+3. Create a rack focus using the Focus Distance slider linked to a target.  
+4. Use the Orbit Distance and Dolly controls to create a full 360° turntable.  
+5. Experiment with linking Zoom to Position Z (zoom lock) to mimic cinematic push-ins.
+
+────────────────────────────────────────────────────────────────────────
+
+### 🔧 Troubleshooting
+- **Camera won’t move:** check parenting order (Camera must be child of PAN_TILT, not of MASTER directly).  
+- **Zoom jumps unexpectedly:** disable Lock Zoom or reset slider range.  
+- **Shake too heavy:** lower Shake Intensity to below 5%.  
+- **Rig drifts:** freeze master keyframes; keep rotation values low (<360°).  
+- **Orbit flips upside down:** reset Orientation instead of Rotation to zero.
+
+────────────────────────────────────────────────────────────────────────
+
+### 🎬 Wrap-Up
+Camera rigs turn After Effects from a 2D animation tool into a true cinematography platform.  
+Start with the **Simple Rig** for quick storytelling and graduate to the **Professional Rig** for cinematic control.  
+With these setups, your virtual camera behaves like its real-world counterpart — smooth, layered, and intuitive.  
+
+> 🪄 *Next:* “Environmental FX & Camera Systems” expands on this by connecting your camera rig to atmospheric depth, light sweeps, and parallax for cinematic environments.
 ```
