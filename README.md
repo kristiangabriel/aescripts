@@ -90,7 +90,7 @@ Example idea:
 That’s one line:
 ```js
 thisComp.layer("Hero").transform.position - [0,50]
-
+```
 ---
 
 ## 🎬 Core Animation
