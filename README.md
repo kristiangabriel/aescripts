@@ -11,6 +11,7 @@ Welcome to your central library of After Effects expressions and micro-training 
 - [Motion & Physics](#motion-and-physics)
 - [Controllers & Rigging](#controllers-and-rigging)
 - [Color & Lighting](#color-and-lighting)
+- [Environmental FX & Camera Systems](#environmental-fx-and-camera-systems)
 - [Time & Looping](#-time--looping)
 - [Utility & Automation](#-utility--automation)
 - [Project Management / Organization](#-project-management--organization)
@@ -1448,5 +1449,323 @@ hslToRgb(hsl);
 ────────────────────────────────────────────────────────────────────────
 
 Next → **Environmental FX & Camera Systems:** integrate fog, depth haze, and parallax light reactions for cinematic realism.
+
+
+<a id="environmental-fx-and-camera-systems"></a>
+## 🌫️ Environmental FX & Camera Systems — Practical Motion Recipes
+This chapter focuses on *cinematic space*: haze, fog, depth, light rays, and practical camera rigs. You’ll build depth-aware looks, parallax that sells scale, and camera behaviors (handheld, orbit, dolly, rack focus) that feel like a real shoot.
+
+────────────────────────────────────────────────────────────────────────
+
+### 🧭 Concepts You’ll Use
+- **Depth ≠ 3D only.** In 2.5D comps you can fake depth from distance-to-camera, layer order, or a custom grayscale “depth map.”
+- **Atmosphere sells scale.** Minimal haze + parallax beats heavy VFX for most UI/graphics shots.
+- **Camera first, FX second.** Rig motion you love → then make FX react to it (distance, angle, speed).
+
+**Controller suggestion (on CTRL):**
+- Sliders: **Haze Amount**, **Ray Intensity**, **Shake Amount**, **Dolly Speed**
+- Angle: **Light Angle**
+- Color: **Fog Color**
+- Checkbox: **Enable Handheld**
+- Point: **Focus Target**
+
+You’ll reference controls like:
+```js
+C=thisComp.layer("CTRL");
+haze=C.effect("Haze Amount")("Slider");
+ray =C.effect("Ray Intensity")("Slider");
+shake=C.effect("Shake Amount")("Slider");
 ```
 
+────────────────────────────────────────────────────────────────────────
+
+## 1) Depth Haze / Fog (2.5D friendly)
+**What it does**  
+Adds atmospheric perspective so distant layers fade toward a fog color.
+
+**Where**  
+On an **Adjustment Layer** above your scene → apply *Fill* (or *Tint*) and *Exposure/Curves*. Paste on **Opacity**:
+
+```js
+C = thisComp.layer("CTRL");
+fog = C.effect("Haze Amount")("Slider"); // 0..100
+// assume 2.5D: use camera distance for depth
+cam = thisComp.activeCamera.toWorld([0,0,0]);
+p   = thisLayer.sampleImage(thisLayer.fromComp(cam), [thisComp.width,thisComp.height]); // placeholder sample; opacity uses a base ramp instead:
+linear(0,0,1,0,1); // (kept for structure)
+```
+
+**Better: per-layer version (on each layer’s Opacity)**  
+Fade each layer by its distance to camera; use an Adjustment Layer with *Fill* set to your **Fog Color** above all layers.
+
+```js
+C=thisComp.layer("CTRL");
+fog = C.effect("Haze Amount")("Slider"); // 0..100
+cam = thisComp.activeCamera;
+camPos = cam.toWorld([0,0,0]);
+d = length(toWorld(anchorPoint) - camPos);   // pixel distance
+near = 200; far = 3000;                      // tune to your scene scale
+fogPct = linear(d, near, far, 0, 100);
+clamp(fogPct * (fog/100), 0, 100);
+```
+
+**Tune**  
+- Increase **far** for larger scenes; adjust **near** so close objects stay crisp.  
+**Example**  
+3 layered skylines: front text reads crisp, far buildings melt into fog.
+
+────────────────────────────────────────────────────────────────────────
+
+## 2) Parallax by Camera (2.5D stacks)
+**What it does**  
+Simple, robust 2.5D parallax: background moves less than foreground as camera moves.
+
+**Where**  
+Use **3D layers**; different Z positions; animate/dolly the **Camera Position**. To auto-offset background layers relative to a “base plate”:
+
+```js
+// On BG layer Position: follow camera with reduced factor
+cam   = thisComp.activeCamera;
+factor= 0.2; // 0=no follow (static), 1=sticks to camera; small values = big parallax
+world = toWorld(anchorPoint);
+camPan= cam.toWorld([0,0,0]) - cam.position; // camera translation proxy
+value + (camPan * factor);
+```
+
+**Tip**  
+Manually place layers at different Z values for stronger depth.
+
+────────────────────────────────────────────────────────────────────────
+
+## 3) Volumetric Light Rays (fake, fast)
+**What it does**  
+Creates directional “God rays” that react to camera/angle.
+
+**Where**  
+Duplicate your bright element (text/logo), blur it heavily, set to **Add** blend mode. On duplicate **Opacity**:
+
+```js
+C=thisComp.layer("CTRL");
+ang = degreesToRadians(C.effect("Light Angle")("Angle"));
+ray = C.effect("Ray Intensity")("Slider");
+dir = [Math.cos(ang), Math.sin(ang)];
+// intensity grows with alignment to direction (cheap dot trick)
+n = normalize(toWorldVec([0,-1,0]));
+align = clamp(dot(n, dir), 0, 1);
+linear(align, 0, 1, 0, ray);
+```
+
+**Tip**  
+Stack with *Radial Blur (Zoom)* centered off-screen along the light angle.
+
+────────────────────────────────────────────────────────────────────────
+
+## 4) Camera Orbit Rig (clean, predictable)
+**What it does**  
+Orbits a camera around a subject at a fixed radius with easy art direction.
+
+**Where**  
+On **Camera Position** (leave Point of Interest at the subject or use a target Null).
+
+```js
+C=thisComp.layer("CTRL");
+speed=C.effect("Dolly Speed")("Slider")/100; // rotations/sec
+radius=1200;
+center=thisComp.layer("Subject").toWorld([0,0,0]);
+ang = time*speed*2*Math.PI;
+[x, y, z] = [Math.cos(ang)*radius, -200, Math.sin(ang)*radius];
+center + [x,y,z];
+```
+
+**Tip**  
+Animate **radius** for dynamic orbit in/out; keyframe **y** for subtle boom.
+
+────────────────────────────────────────────────────────────────────────
+
+## 5) Handheld / Micro-Jitter (tasteful)
+**What it does**  
+Adds organic micro-movement to camera without seasickness.
+
+**Where**  
+On **Camera Position** (or a parent Null). Keep small.
+
+```js
+C=thisComp.layer("CTRL");
+on = C.effect("Enable Handheld")("Checkbox")>0;
+amt = C.effect("Shake Amount")("Slider"); // 0..100
+seedRandom(0,true);
+freq1=0.8; freq2=1.3;
+x = amt*0.6*Math.sin(time*freq1*2*Math.PI);
+y = amt*0.4*Math.sin((time+0.37)*freq2*2*Math.PI);
+z = amt*0.3*Math.sin((time+0.71)*0.5*2*Math.PI);
+value + (on ? [x,y,z] : [0,0,0]);
+```
+
+**Tip**  
+Less is more. 2–8 px is enough for UI/product; more for gritty handheld.
+
+────────────────────────────────────────────────────────────────────────
+
+## 6) Speed-Reactive Motion Blur / Exposure
+**What it does**  
+Brightens or blurs slightly when camera moves quickly.
+
+**Where**  
+Adjustment Layer → *Exposure* (or Glow) → **Exposure** expression:
+
+```js
+cam = thisComp.activeCamera;
+dt = thisComp.frameDuration;
+p1 = cam.position;
+p0 = cam.position.valueAtTime(time - dt);
+spd = length(p1 - p0)/dt;     // px/sec
+gain = clamp(spd/4000, 0, 0.35);
+value + gain;
+```
+
+**Example**  
+Tasteful highlight lift on fast sliders/pans.
+
+────────────────────────────────────────────────────────────────────────
+
+## 7) Rack Focus (target-based DOF)
+**What it does**  
+Automatically sets **Focus Distance** to a target Null for reliable rack focus.
+
+**Where**  
+On **Camera > Focus Distance**:
+
+```js
+target = thisComp.layer("CTRL").effect("Focus Target")("Point");
+cam    = thisComp.activeCamera;
+camPos = cam.toWorld([0,0,0]);
+// convert target comp point to 3D ray from camera
+tWorld = cam.fromCompToWorld([target[0], target[1], 0]);
+length(tWorld - camPos);
+```
+
+**Tip**  
+Enable DOF on camera; control **Aperture** for depth strength.
+
+────────────────────────────────────────────────────────────────────────
+
+## 8) Depth-Driven Fake DOF (works without camera DOF)
+**What it does**  
+Blurs layers based on distance to camera—fast fallback when real DOF is too heavy.
+
+**Where**  
+On each layer’s *Gaussian Blur* **Blurriness**:
+
+```js
+camPos = thisComp.activeCamera.toWorld([0,0,0]);
+d = length(toWorld(anchorPoint) - camPos);
+near= 300; far= 2500; maxBlur = 24;
+amt = linear(d, near, far, 0, maxBlur);
+clamp(amt, 0, maxBlur);
+```
+
+**Tip**  
+Blur backgrounds more; keep hero layers with lower maxBlur.
+
+────────────────────────────────────────────────────────────────────────
+
+## 9) Light Sweep / Sheen (angle + time)
+**What it does**  
+Adds a moving highlight band across text/logos based on light angle.
+
+**Where**  
+Use a duplicate set to **Add** with a feathered mask. On **Opacity**:
+
+```js
+C=thisComp.layer("CTRL");
+ang = degreesToRadians(C.effect("Light Angle")("Angle"));
+dir = [Math.cos(ang), Math.sin(ang)];
+// project world position onto light direction
+p = toWorld(anchorPoint);
+t = (p[0]*dir[0] + p[1]*dir[1]) / 1000 + time*0.3; // scale + time sweep
+band = 1 - Math.abs(fract(t)*2 - 1); // 0..1 triangle wave
+linear(band, 0.6, 1, 0, 100);
+```
+
+**Tune**  
+Increase the slope of `band` mapping for tighter sweeps.
+
+────────────────────────────────────────────────────────────────────────
+
+## 10) Distance-Aware Particles (fog dust / motes)
+**What it does**  
+Makes particles more/less visible based on camera distance for believable depth.
+
+**Where**  
+On particle layer **Opacity**:
+
+```js
+camPos = thisComp.activeCamera.toWorld([0,0,0]);
+d = length(toWorld(anchorPoint) - camPos);
+near=200; far=2400;
+linear(d, near, far, 100, 10); // nearer = denser
+```
+
+**Tip**  
+Use CC Particle World/Particular for emission; keep sizes tiny, speeds low.
+
+────────────────────────────────────────────────────────────────────────
+
+## 11) Auto-Parallax for 2D UI (no 3D required)
+**What it does**  
+Creates parallax drift linked to mouse/target in 2D comps (promo sites, dashboards).
+
+**Where**  
+On a group’s **Position**:
+
+```js
+C=thisComp.layer("CTRL");
+T=C.effect("Focus Target")("Point"); // repurpose as “parallax target”
+strength = 0.08;
+center = [thisComp.width/2, thisComp.height/2];
+offset = (T - center) * strength;
+value + [offset[0], offset[1]];
+```
+
+**Use**  
+Move the target to “parallax” the UI stack subtly for depth.
+
+────────────────────────────────────────────────────────────────────────
+
+## 12) Cinematic Framing Overlay (guides, not FX)
+**What it does**  
+Draws safe area / aspect bars driven by one slider.
+
+**Where**  
+On a dedicated shape overlay layer’s **Opacity**:
+
+```js
+C=thisComp.layer("CTRL");
+bars = C.effect("Cinematic Bars")("Slider"); // 0..100
+bars; // simply show/hide; animate slider to on/off
+```
+
+Add a **Rectangle** scaled to create letterbox bars; tie its **Size** to comp height with an expression if you want responsive bars.
+
+────────────────────────────────────────────────────────────────────────
+
+### 🔧 Troubleshooting
+- **Parallax too strong** → lower radius or parallax factor; keep orbits shallow for UI.
+- **Rays look cheesy** → keep Add/Screen duplicates subtle; stack blur + light angle.
+- **DOF noisy/slow** → use Fake DOF (per-layer blur) or limit DOF to hero objects.
+- **Handheld feels seasick** → lower Shake Amount and frequencies; keep Z wobble tiny.
+- **Haze washes color** → tint your fog toward scene palette; apply slight contrast after haze.
+
+────────────────────────────────────────────────────────────────────────
+
+### 🧪 Practice Exercises
+1) Build a 2.5D parallax scene (3 planes); add depth haze and a slow camera orbit.  
+2) Add a Light Sweep to a logo and keyframe Light Angle to rake across it.  
+3) Set up Rack Focus between two text cards using Focus Target.  
+4) Create a Fake DOF pass for a dense UI scene; compare render speed vs Camera DOF.  
+5) Add tasteful Handheld to a dolly pass, then modulate Exposure with camera speed.
+
+────────────────────────────────────────────────────────────────────────
+
+Next → **Time & Looping**: global speed controls, beats, markers, and procedural time tricks for complex sequences.
+```
