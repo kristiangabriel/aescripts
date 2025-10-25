@@ -665,4 +665,228 @@ val=ease(t,0,dur,0,100);
 ────────────────────────────────────────────────────────────────────────
 
 Next → **Motion & Physics:** explore realistic drifts, inertia, and simulated forces for both text and graphics.
+
+<a id="motion-and-physics"></a>
+## 🌪️ Motion & Physics — Practical Motion Recipes
+This section explores motion that feels *real* — with momentum, drag, gravity, friction, and follow-through.  
+You’ll learn how to add inertia to any property, simulate floating drift, create gravitational pull, and add realistic damped spring motion.
+
+────────────────────────────────────────────────────────────────────────
+
+### 🧭 Quick Note on Approach
+All “physics” here are simplified — they use **expressions**, not simulations.  
+You can paste these directly on Position, Rotation, or custom properties.  
+They’re designed to feel *cinematic* and responsive without needing plugins.
+
+────────────────────────────────────────────────────────────────────────
+
+### 1) Inertia / Momentum
+**What it does:** continues motion naturally after the keyframes stop, gradually slowing down.  
+**Where:** any keyframed property (Position, Rotation, Scale).
+
+**How to set up:**
+1. Animate your layer as usual (ending keyframes).  
+2. Paste this on the animated property.
+
+```js
+n = 0;
+if (numKeys > 0){
+  n = nearestKey(time).index;
+  if (key(n).time > time) n--;
+}
+if (n == 0){
+  value;
+}else{
+  t = time - key(n).time;
+  v = velocityAtTime(key(n).time - thisComp.frameDuration/10);
+  amp = .85;    // momentum strength
+  decay = 4;    // drag (higher = stops faster)
+  value + v*amp*Math.exp(-decay*t);
+}
+```
+
+**Tune:**  
+- Lower `decay` for slower, gliding stops.  
+- Raise `amp` for more momentum.  
+**Example:** Camera drift after stop, UI panel easing to rest.
+
+────────────────────────────────────────────────────────────────────────
+
+### 2) Floating Drift / Ambient Motion
+**What it does:** continuous slow, smooth random drift for background elements.  
+**Where:** Position or Rotation.
+
+```js
+amp = [20,10];   // movement amplitude X,Y
+freq = 0.08;     // cycles per second
+seedRandom(index,true);
+[sin(time*freq*2*Math.PI)*amp[0],
+ cos(time*freq*2*Math.PI)*amp[1]]
+```
+
+**Tune:**  
+- Lower `freq` for slower motion.  
+- Adjust amplitude for subtle or large sway.  
+**Example:** Floating HUD panels, hovering icons, parallax layers.
+
+────────────────────────────────────────────────────────────────────────
+
+### 3) Friction (Progressive Resistance)
+**What it does:** simulates gradual deceleration over time — like air resistance.  
+**Where:** any continuously animated property.
+
+```js
+vel = velocity;       // built-in velocity at this frame
+fric = 0.85;          // 0–1 range (lower = more resistance)
+value - vel*(1-fric);
+```
+
+**Tip:** combine with looped or oscillating animation for more natural slowing.  
+**Example:** mechanical dials, rotating wheels, swinging pointers.
+
+────────────────────────────────────────────────────────────────────────
+
+### 4) Spring Physics (Hooke’s Law)
+**What it does:** creates a spring that pulls toward a target value with realistic bounce.  
+**Where:** Position, Scale, or Rotation.
+
+```js
+target = thisComp.layer("CTRL").transform.position; // or any target
+stiffness = 5;    // higher = stiffer spring
+damping   = 1.5;  // higher = more damped
+mass      = 1;
+
+t = time - inPoint;
+x = value - target;
+accel = (-stiffness/mass)*x - damping*velocity/mass;
+value + accel;
+```
+
+**Tune:**  
+- Lower `damping` = bouncier.  
+- Higher `stiffness` = tighter spring.  
+**Example:** camera rig sway, UI follow, connected elements.
+
+────────────────────────────────────────────────────────────────────────
+
+### 5) Gravity Drop
+**What it does:** simulates a simple fall under gravity with optional bounce.  
+**Where:** Position (Y-axis typically).
+
+```js
+g = 1200;        // gravity
+b = 0.6;         // bounce coefficient (0–1)
+floor = 800;     // ground Y
+t = time - inPoint;
+y = value[1] + g*t*t/2;
+if (y > floor){
+  t = Math.sqrt(2*(y-floor)/g);
+  v = g*t*(1-b);
+  y = floor - v*v/(2*g);
+}
+[value[0], y];
+```
+
+**Tune:**  
+- Lower `b` for flatter bounces.  
+- Adjust `floor` for comp height.  
+**Example:** falling logo, icon drop-in, physics toys.
+
+────────────────────────────────────────────────────────────────────────
+
+### 6) Orbit / Centripetal Force
+**What it does:** keeps a layer orbiting another layer’s position in circular motion.  
+**Where:** Position.
+
+```js
+center = thisComp.layer("CENTER").transform.position;
+radius = 200;
+speed  = 1.2;       // rotations per second
+angle  = time*speed*2*Math.PI;
+[center[0] + Math.cos(angle)*radius,
+ center[1] + Math.sin(angle)*radius];
+```
+
+**Tip:** animate `radius` or `speed` for dynamic orbits.  
+**Example:** spinning satellites, atomic diagrams, UI radar sweeps.
+
+────────────────────────────────────────────────────────────────────────
+
+### 7) Follow / Chase (Smooth Target Tracking)
+**What it does:** makes a layer follow another with lag and smoothing.  
+**Where:** Position.
+
+```js
+leader = thisComp.layer("Leader");
+lag = 0.25;         // seconds of delay
+follow = leader.transform.position.valueAtTime(time - lag);
+damp = 8;           // damping for extra smoothness
+linear(value, follow, follow, follow, value + (follow - value)/damp);
+```
+
+**Example:** camera follow shots, trailing icons, soft object pursuit.
+
+────────────────────────────────────────────────────────────────────────
+
+### 8) Pendulum Swing
+**What it does:** oscillating rotation like a pendulum with natural decay.  
+**Where:** Rotation.
+
+```js
+amp = 45;      // degrees
+freq = 0.5;    // swings per second
+decay = 0.8;   // exponential damping
+amp*Math.sin(freq*time*2*Math.PI)/Math.exp(decay*time);
+```
+
+**Tune:**  
+- Smaller `decay` = longer swing.  
+- Higher `amp` = wider swing.  
+**Example:** hanging signs, character tails, swinging lamps.
+
+────────────────────────────────────────────────────────────────────────
+
+### 9) Dampened Oscillator (Universal Bounce)
+**What it does:** reusable “bounce physics” for any property.  
+**Where:** any keyframed property.
+
+```js
+amp = .6; freq = 3; decay = 5;
+n = 0;
+if (numKeys > 0){
+  n = nearestKey(time).index;
+  if (key(n).time > time) n--;
+}
+if (n == 0){ value; }
+else {
+  t = time - key(n).time;
+  v = velocityAtTime(key(n).time - thisComp.frameDuration/10);
+  value + v*amp*Math.sin(freq*t*2*Math.PI)/Math.exp(decay*t);
+}
+```
+
+**Tune:**  
+- `amp` controls strength, `freq` speed, `decay` damping.  
+**Example:** universal “spring-back” for sliders, panels, or limbs.
+
+────────────────────────────────────────────────────────────────────────
+
+### 🔧 Troubleshooting
+• Nothing moves → ensure layer has keyframes or target reference.  
+• Too fast → reduce `freq` or increase `decay`.  
+• Motion drifts offscreen → check comp units (pixels vs 3D space).  
+• For linked layers, verify target layer names match exactly.
+
+────────────────────────────────────────────────────────────────────────
+
+### 🧪 Practice Exercises
+1. Apply *Inertia* to a logo’s Position so it drifts after stop.  
+2. Create a *Floating Drift* background using slow sine motion.  
+3. Add *Gravity Drop* to icons that bounce onto a floor line.  
+4. Combine *Follow/Chase* + *Spring Physics* for a soft camera rig.  
+5. Build a *Pendulum Swing* title and gradually increase `decay` until it rests.
+
+────────────────────────────────────────────────────────────────────────
+
+Next → **Controllers & Rigging**: learn to centralize multiple physics expressions under shared sliders and layer controls.
 ```
