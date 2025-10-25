@@ -166,7 +166,6 @@ Once you’ve built this foundation, everything else—Text Animation, Physics, 
 
 > 🪄 *Next:* “Core Animation – Part II” introduces the first real movement recipes: Elastic Overshoot, Delay Chains, and Follow-Through.
 
-```markdown
 ## 🎬 Core Animation – Part II: Practical Motion Recipes
 Welcome to the hands-on half of Core Animation.  
 Each exercise shows **what the behavior does**, **where to apply it**, and **how to direct it** so you can create realistic, dynamic motion without endless keyframes.
