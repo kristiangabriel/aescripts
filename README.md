@@ -14,6 +14,7 @@ Welcome to your central library of After Effects expressions and micro-training 
 - [Environmental FX & Camera Systems](#environmental-fx-and-camera-systems)
 - [Professional Camera Rigging](#professional-camera-rigging)
 - [Professional Camera Rigging – Part II (Specialized Systems)](#professional-camera-rigging-part-ii-specialized-systems)
+- [Professional Camera Rigging – Part III (Motion Design Systems)](#professional-camera-rigging-part-iii-motion-design-systems)
 - [Time & Looping](#-time--looping)
 - [Utility & Automation](#-utility--automation)
 - [Project Management / Organization](#-project-management--organization)
@@ -2335,4 +2336,270 @@ From auto-tracking to rack-focus, these systems give After Effects artists true 
 Once mastered, you’ll think less like an animator and more like a **director of photography** — commanding movement, focus, and light with precision.
 
 > 🪄 *Next:* “Environmental FX & Camera Systems” expands on these rigs, connecting them to atmospheric and lighting systems for cinematic realism.
+
+
+
+<a id="professional-camera-rigging-part-iii-motion-design-systems"></a>
+## 🎬 Professional Camera Rigging – Part III (Motion Design Systems)
+Cinematic storytelling meets motion-graphics precision.  
+This chapter focuses on camera path design, auto-framing, spline motion, orbit stabilization, and camera choreography for title sequences, data-driven visualizations, and dynamic explainer scenes.
+
+────────────────────────────────────────────────────────────────────────
+
+### 🧭 Core Idea
+Where Parts I–II built *control rigs*, this part builds *behaviour systems* — camera motion that understands composition, follows splines, and maintains framing automatically.  
+
+Key benefits:
+- **Repeatability:** exact orbital paths, reusable templates.  
+- **Composition safety:** camera keeps subjects within the rule-of-thirds.  
+- **Spline smoothness:** no jerky keyframes; motion follows Bézier math.  
+- **Collision awareness:** prevents camera from clipping through geometry.  
+
+────────────────────────────────────────────────────────────────────────
+
+## 1) Spline Path Rig (Orbit & Follow)
+**What it does**  
+Moves the camera along any 3D path layer (shape or mask) with automatic orientation.
+
+**Setup**  
+1. Draw a *Path Layer* named `CAM_PATH`.  
+2. Create a *Null* named `CAM_SPLINE_CTRL` with a **Slider** called `Percent Along Path` (0–100).  
+3. Parent your Camera to the Null.  
+
+**Paste on CAM_SPLINE_CTRL Position**
+```js
+p = thisComp.layer("CAM_PATH").mask("Mask 1").path;
+t = effect("Percent Along Path")("Slider")/100;
+p.pointOnPath(t);
+```
+
+**Optional – Automatic Orientation**
+```js
+p = thisComp.layer("CAM_PATH").mask("Mask 1").path;
+t = effect("Percent Along Path")("Slider")/100;
+lookAt(p.pointOnPath(t), p.pointOnPath(t+0.01));
+```
+
+**Use**  
+Animate the slider for a perfect dolly/arc shot.  
+Duplicate for multiple cameras following the same spline with time offsets.
+
+────────────────────────────────────────────────────────────────────────
+
+## 2) Auto-Framing System (Rule of Thirds Framer)
+**What it does**  
+Keeps the subject inside an ideal composition zone automatically, using a bounding-box tracker.  
+
+**Setup**  
+- Create a **Target Null** called `SUBJECT`.  
+- Add a **Point Control** on `CTRL` named `Framing Offset`.
+
+**Paste on Camera Position or POI**
+```js
+target = thisComp.layer("SUBJECT").toComp([0,0]);
+offset = thisComp.layer("CTRL").effect("Framing Offset")("Point");
+compCenter = [thisComp.width/2, thisComp.height/2];
+desired = compCenter + offset;
+pos = value + (desired - target)*0.05; // smoothing factor
+pos;
+```
+
+**Result**  
+The camera subtly pans to maintain rule-of-thirds framing even if the subject drifts.  
+Perfect for interviews, data callouts, or animated charts.
+
+────────────────────────────────────────────────────────────────────────
+
+## 3) Orbit Stabilizer (Rotate Around Subject with Auto-Tilt)
+**What it does**  
+Orbits smoothly around a subject while keeping horizon level and focus constant.  
+
+**Setup**  
+Add to **Camera Position** (parented to a CTRL Null).  
+```js
+C = thisComp.layer("CTRL");
+radius = C.effect("Orbit Radius")("Slider");
+speed  = C.effect("Orbit Speed")("Slider");
+tilt   = C.effect("Tilt")("Angle");
+
+center = thisComp.layer("SUBJECT").toWorld([0,0,0]);
+ang = time*speed*2*Math.PI;
+
+[x,y,z] = [Math.cos(ang)*radius, Math.sin(tilt*Math.PI/180)*radius, Math.sin(ang)*radius];
+center + [x,y,z];
+```
+
+**Tip**  
+Add a small Ease Out curve on Orbit Speed for cinematic starts/stops.
+
+────────────────────────────────────────────────────────────────────────
+
+## 4) Path Ease & Camera Acceleration
+**What it does**  
+Smooths camera speed along splines using easing math (mimicking crane inertia).  
+
+**Expression on Percent Along Path Slider**
+```js
+easeInOut(time, inPoint, outPoint, 0, 100);
+```
+
+Or manually:
+```js
+linear(Math.sin(time*Math.PI/2), 0, 1, 0, 100);
+```
+
+**Result**  
+Camera accelerates gently and decelerates gracefully at endpoints.
+
+────────────────────────────────────────────────────────────────────────
+
+## 5) Collision-Safe Camera (Proximity Clamp)
+**What it does**  
+Stops camera from intersecting geometry layers.  
+
+**Setup**  
+Add a **Point Control** on CTRL named `Obstacle`.  
+
+**Paste on Camera Position**
+```js
+camPos = value;
+obst = thisComp.layer("CTRL").effect("Obstacle")("Point");
+minDist = 200; // pixels
+d = length(obst - camPos);
+if (d < minDist){
+  dir = normalize(camPos - obst);
+  obst + dir*minDist;
+}else{
+  camPos;
+}
+```
+
+**Use**  
+Prevents collisions in product fly-throughs or 3D UI scenes.
+
+────────────────────────────────────────────────────────────────────────
+
+## 6) Camera Follow Spline + Target
+**What it does**  
+Combines path-following with continuous subject tracking.  
+
+**Setup**  
+Use `CAM_PATH` for motion and `SUBJECT` as target.  
+
+**Camera Position**
+```js
+p = thisComp.layer("CAM_PATH").mask("Mask 1").path;
+t = effect("Percent Along Path")("Slider")/100;
+p.pointOnPath(t);
+```
+**Camera Orientation**
+```js
+sub = thisComp.layer("SUBJECT").toWorld([0,0,0]);
+pos = toWorld(anchorPoint);
+lookAt(sub - pos);
+```
+
+────────────────────────────────────────────────────────────────────────
+
+## 7) Dynamic Depth and Focus System
+**What it does**  
+Links focus and aperture automatically to camera speed for realism.  
+
+**Focus Distance**
+```js
+spd = length(velocity);
+linear(spd, 0, 1500, 500, 1500);
+```
+
+**Aperture**
+```js
+spd = length(velocity);
+linear(spd, 0, 1500, 10, 60);
+```
+
+**Use**  
+Slow moves = shallow DOF; fast moves = deeper focus (like a real lens pull).
+
+────────────────────────────────────────────────────────────────────────
+
+## 8) Camera Look-At Chain (Subject → Secondary → Environment)
+**What it does**  
+Blends between multiple targets — e.g., character → UI panel → horizon.  
+
+**Setup**  
+Add three **Point Controls**: Primary, Secondary, Tertiary.  
+Add a **Slider** `Focus Blend` (0–100).
+
+```js
+C = thisComp.layer("CTRL");
+p1 = C.effect("Primary")("Point");
+p2 = C.effect("Secondary")("Point");
+p3 = C.effect("Tertiary")("Point");
+b  = C.effect("Focus Blend")("Slider")/100;
+
+mix12 = linear(b, 0, 0.5, p1, p2);
+mix23 = linear(b, 0.5, 1, p2, p3);
+final = b < 0.5 ? mix12 : mix23;
+lookAt(final - toWorld(anchorPoint));
+```
+
+**Use**  
+Smooth camera gazes between storytelling elements without jump cuts.
+
+────────────────────────────────────────────────────────────────────────
+
+## 9) Spline Bank and Scene Presets
+**Concept**  
+Store reusable spline paths (dolly, orbit, crane) as guide layers.  
+Reference them by name using expressions like:
+```js
+thisComp.layer("CAM_PATH_ORBIT").mask("Path 1").path.pointOnPath(time%1);
+```
+Combine with the **Scene Switcher** rig (Part II) for one-comp shot management.
+
+────────────────────────────────────────────────────────────────────────
+
+## 10) Auto-Compose Fit Rig
+**What it does**  
+Centers camera framing on dynamically sized compositions or text blocks.  
+
+**Setup**  
+Add a null **Frame Box** parented to subject; link camera distance to its bounding box.
+
+```js
+rect = thisComp.layer("Frame Box").sourceRectAtTime(time,false);
+scale = rect.width/thisComp.width;
+z = linear(scale, 0, 1, 1500, 600);
+[value[0], value[1], z];
+```
+
+**Result**  
+Camera automatically adjusts distance to maintain perfect layout framing when text or elements resize.
+
+────────────────────────────────────────────────────────────────────────
+
+### 🧪 Practice Exercises
+1. Animate a Spline Path Rig following a product reveal curve; use Auto-Framing for subject stability.  
+2. Combine Orbit Stabilizer with Collision Clamp to keep safe distance from geometry.  
+3. Build a Multi-Target Look-At chain for character → object → horizon transitions.  
+4. Add Dynamic Depth System to accentuate fast motion.  
+5. Test Auto-Compose Fit on titles that change length automatically.
+
+────────────────────────────────────────────────────────────────────────
+
+### 🔧 Troubleshooting
+- **Spline path jerks:** ensure the path is open, not closed, or offset by +0.01 t when sampling.  
+- **Camera flips:** reset Orientation to [0,0,0]; use lookAt instead of toWorldVec differences.  
+- **Focus flicker:** apply smooth() to Focus Distance for temporal averaging.  
+- **Collision clamp jumps:** keep minDist proportional to scene scale (1–5% of comp width).  
+- **Auto-framing drifts:** increase interpolation factor (0.05 → 0.1) for faster correction.
+
+────────────────────────────────────────────────────────────────────────
+
+### 🎬 Summary
+Motion-Design Camera Systems elevate After Effects to a professional cinematic toolset.  
+By combining spline motion, auto-framing, and dynamic depth, you can choreograph shots with physical accuracy and artistic intent — all without touching a single keyframe.  
+These rigs form the backbone of high-end broadcast design, UI motion, and narrative title sequences.
+
+> 🪄 *Next:* **Environmental FX & Camera Systems** — extend these rigs into atmospheric depth, light sweeps, and environmental realism.
 ```
