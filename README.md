@@ -95,31 +95,72 @@ thisComp.layer("Hero").transform.position - [0,50]
 
 ## 🎬 Core Animation
 
-### Why “Core Animation” matters
-Core animation patterns are the bread-and-butter of motion design: **overshoot, damping, anticipation, follow-through, delay chains, offsets, and loops**. Mastering these lets you build rigs that feel intentional and alive—without spraying dozens of manual keyframes.
+### Why Core Animation Matters
+Core Animation is where expressions come alive.  
+If the Introduction taught you *what* expressions are and *why* they exist, this section teaches you *how they shape motion itself.*
+
+At its heart, animation is storytelling through movement.  
+Expressions give that movement intelligence—turning static transitions into living, responsive motion. They let you describe *how* something should behave, not just *where* it should go. Whether it’s a bouncing logo, a button reacting to touch, or a swarm of layers cascading in rhythm, Core Animation builds the foundation for believable energy and timing.
+
+Think of it as your first step into **expressive motion logic**: how to make After Effects understand physics, weight, anticipation, and reaction—all through a few lines of math and relationships between layers.
 
 ---
 
-### The mental model
-- **Keyframes define intent** (poses and timings).
-- **Expressions define behavior** (how motion gets from A → B, or responds to other layers).
-- **Controllers** centralize tweakable parameters so you adjust motion globally.
+### The Mental Model
+Before diving into code, it’s important to understand *how animators think when they use expressions*.
+
+- **Keyframes define intention.**  
+  They say, “Move from here to there.”  
+
+- **Expressions define behavior.**  
+  They say, “Move like this.”
+
+Instead of manually animating every easing curve or bounce, you describe a motion rule—something like:
+> “Every time this object lands, give it a little spring.”
+
+That rule can apply to one layer or a hundred layers simultaneously.  
+Core Animation is where that shift happens—from keyframe-by-keyframe design to *systemic animation thinking.*
 
 ---
 
-### Quick setup: the minimal control rig (recommended)
-1) Add a Null named **CTRL** (Layer → New → Null Object).
-2) Apply **Expression Controls → Slider Control** three times; rename sliders:
-   - **Amp** (amplitude/strength)
-   - **Freq** (frequency/speed of oscillation)
-   - **Decay** (how quickly it settles)
-3) You’ll reference them as:
-   ```js
-   ctrl = thisComp.layer("CTRL");
-   amp  = ctrl.effect("Amp")("Slider");
-   freq = ctrl.effect("Freq")("Slider");
-   decay= ctrl.effect("Decay")("Slider");
+### Quick Setup: Building a Safe Playground
+Before any advanced work, it helps to build a quick testing setup:
+1. **Create a Null layer** named `CTRL`.  
+2. Add a few **Expression Controls → Slider Controls** and rename them “Amp,” “Freq,” and “Decay.”  
+3. These act as universal dials to adjust the intensity, speed, and smoothness of any animation later.
 
+You’re not writing code yet—you’re preparing your environment.  
+These sliders become your “motion DNA”—a way to control how energy travels through your scene.
 
-### Elastic Overshoot
-*(placeholder — you’ll fill later)*
+---
+
+### The Philosophy of Core Motion
+Every great animation—no matter how complex—comes down to a few timeless principles:
+- **Anticipation**: the small pre-movement before an action.  
+- **Overshoot**: the satisfying rebound after reaching a destination.  
+- **Follow-Through**: parts of an object continuing to move after the main body stops.  
+- **Delay and Offset**: staggered timing to create natural flow.  
+- **Loops and Repetition**: energy that feels continuous, alive, rhythmic.  
+
+Expressions don’t replace these principles—they **amplify** them.  
+By describing them mathematically, you can repeat and control them endlessly without manually adjusting keyframes.
+
+---
+
+### Where You’re Headed Next
+In the coming Core Animation modules, we’ll translate these ideas into action:
+- How to build an elastic overshoot with a few lines of math.  
+- How to make objects react with follow-through automatically.  
+- How to offset animations so entire compositions flow together.  
+- And how to loop or oscillate motion for dynamic, self-sustaining energy.
+
+You’ll start small—just sliders and shapes—and end up creating motion systems that behave like living organisms.
+
+> The goal isn’t to memorize code.  
+> It’s to learn to think like motion behaves.
+
+Once you’ve built this foundation, everything else—Text Animation, Physics, Rigging—builds effortlessly on top.
+
+---
+
+> 🪄 *Next:* “Core Animation – Part II” introduces the first real movement recipes: Elastic Overshoot, Delay Chains, and Follow-Through.
