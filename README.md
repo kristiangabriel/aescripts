@@ -43,14 +43,13 @@ Have fun, experiment, and enjoy!
 
 ### 🧠 What Is an Expression?
 
-Expressions are tiny bits of code that control animation inside After Effects. Instead of adding dozens of keyframes, you can describe how something behaves using a simple line or two of logic.
+### 🧠 What Is an Expression?
 
-At their core, expressions tell a property how to change over time. They act as small formulas that drive motion, behavior, or relationships between layers.
+Expressions are tiny bits of code that control animation inside After Effects. Instead of adding dozens of keyframes, you can describe how something behaves using a simple line or two of logic. At their core, expressions tell a property how to change over time—they act as small formulas that drive motion, behavior, or relationships between layers.
 
-Expressions are written in a simplified version of JavaScript, customized for motion graphics. You don’t need to be a programmer—just understand a few basics: how to refer to a value, do simple math, and connect one property to another.
+They’re written in a simplified version of JavaScript, customized for motion graphics. You don’t need to be a programmer; just understand a few basics—how to refer to a value, do simple math, and connect one property to another.
 
 Expressions don’t replace animation skills—they enhance them. They automate repetitive actions, simulate physics, link layers dynamically, and unlock creative motion that would take hours to keyframe manually.
-
 
 ---
 
@@ -62,23 +61,19 @@ Expressions don’t replace animation skills—they enhance them. They automate 
 | Example | Scale 0% → 100% over 1 second | `value + 10*Math.sin(time*2*Math.PI)` |
 | Flexibility | Static — must be updated by hand. | Dynamic — updates automatically, even if timing changes. |
 
-You can even *mix* them.  
-Add keyframes first, then apply an expression on top to enhance the motion—AE simply layers the math over your keyframed base value.
+You can even *mix* them.  Add keyframes first, then apply an expression on top to enhance the motion—AE simply layers the math over your keyframed base value.
 
 ---
 
 ## You Don’t Need to Know Full JavaScript
 
-After Effects expressions use **a limited, friendly subset of JavaScript** called *ExtendScript Expressions*.  
-It’s purpose-built for artists, not developers.  
-Here’s the good news:
+After Effects expressions use **a limited, friendly subset of JavaScript** called *ExtendScript Expressions*. It’s purpose-built for artists, not developers. Here’s the good news:
 
 - You’ll **never** write full web-style JavaScript with functions, objects, and DOM calls.  
 - You’ll mainly use small formulas—often one or two lines.  
 - AE gives you built-in variables like `time`, `value`, `thisComp`, and helper functions like `wiggle()`, `linear()`, and `ease()`.
 
-Think of it like learning to drive a car without becoming a mechanic.  
-You’ll use the controls, not build the engine.
+Think of it like learning to drive a car without becoming a mechanic. You’ll use the controls, not build the engine.
 
 ---
 
@@ -91,8 +86,7 @@ Every property that can be keyframed (Position, Scale, Opacity, Rotation, etc.) 
 3. Type or paste your expression.  
 4. Press **Enter** (numpad) or **Return** to apply it.
 
-If the code is valid, AE displays it in red text and animates immediately.  
-If there’s an error, you’ll see a warning with a description—often as simple as a missing semicolon or parenthesis.
+If the code is valid, AE displays it in red text and animates immediately. If there’s an error, you’ll see a warning with a description—often as simple as a missing semicolon or parenthesis.
 
 ---
 
@@ -118,13 +112,9 @@ thisComp.layer("Hero").transform.position - [0,50]
 ## 🎬 Core Animation
 
 ### Why Core Animation Matters
-Core Animation is where expressions come alive.  
-If the Introduction taught you *what* expressions are and *why* they exist, this section teaches you *how they shape motion itself.*
+Core Animation is where expressions come alive. If the Introduction taught you *what* expressions are and *why* they exist, this section teaches you *how they shape motion itself.*
 
-At its heart, animation is storytelling through movement.  
-Expressions give that movement intelligence—turning static transitions into living, responsive motion. They let you describe *how* something should behave, not just *where* it should go. Whether it’s a bouncing logo, a button reacting to touch, or a swarm of layers cascading in rhythm, Core Animation builds the foundation for believable energy and timing.
-
-Think of it as your first step into **expressive motion logic**: how to make After Effects understand physics, weight, anticipation, and reaction—all through a few lines of math and relationships between layers.
+At its heart, animation is storytelling through movement. Expressions give that movement intelligence—turning static transitions into living, responsive motion. They let you describe *how* something should behave, not just *where* it should go. Whether it’s a bouncing logo, a button reacting to touch, or a swarm of layers cascading in rhythm, Core Animation builds the foundation for believable energy and timing. Think of it as your first step into **expressive motion logic**: how to make After Effects understand physics, weight, anticipation, and reaction—all through a few lines of math and relationships between layers.
 
 ---
 
@@ -140,8 +130,7 @@ Before diving into code, it’s important to understand *how animators think whe
 Instead of manually animating every easing curve or bounce, you describe a motion rule—something like:
 > “Every time this object lands, give it a little spring.”
 
-That rule can apply to one layer or a hundred layers simultaneously.  
-Core Animation is where that shift happens—from keyframe-by-keyframe design to *systemic animation thinking.*
+That rule can apply to one layer or a hundred layers simultaneously. Core Animation is where that shift happens—from keyframe-by-keyframe design to *systemic animation thinking.*
 
 ---
 
@@ -151,8 +140,7 @@ Before any advanced work, it helps to build a quick testing setup:
 2. Add a few **Expression Controls → Slider Controls** and rename them “Amp,” “Freq,” and “Decay.”  
 3. These act as universal dials to adjust the intensity, speed, and smoothness of any animation later.
 
-You’re not writing code yet—you’re preparing your environment.  
-These sliders become your “motion DNA”—a way to control how energy travels through your scene.
+You’re not writing code yet—you’re preparing your environment. These sliders become your “motion DNA”—a way to control how energy travels through your scene.
 
 ---
 
@@ -164,8 +152,7 @@ Every great animation—no matter how complex—comes down to a few timeless pri
 - **Delay and Offset**: staggered timing to create natural flow.  
 - **Loops and Repetition**: energy that feels continuous, alive, rhythmic.  
 
-Expressions don’t replace these principles—they **amplify** them.  
-By describing them mathematically, you can repeat and control them endlessly without manually adjusting keyframes.
+Expressions don’t replace these principles—they **amplify** them. By describing them mathematically, you can repeat and control them endlessly without manually adjusting keyframes.
 
 ---
 
@@ -1223,8 +1210,7 @@ Next → **Color & Lighting**: build global palettes, light-linked responses, an
 
 <a id="color-and-lighting"></a>
 ## 🎨 Color & Lighting — Practical Motion Recipes
-This section teaches you how to build color systems and pseudo-lighting directly inside After Effects using expressions.  
-You’ll link palettes to controllers, automate tonal shifts, drive gradients from motion, and simulate environmental light sweeps—all fully procedural and keyframe-free.
+This section teaches you how to build color systems and pseudo-lighting directly inside After Effects using expressions. You’ll link palettes to controllers, automate tonal shifts, drive gradients from motion, and simulate environmental light sweeps—all fully procedural and keyframe-free.
 
 ────────────────────────────────────────────────────────────────────────
 
@@ -1713,9 +1699,7 @@ To make the rig readable:
 ────────────────────────────────────────────────────────────────────────
 
 ### 🎬 Wrap-Up
-Camera rigs turn After Effects from a 2D animation tool into a true cinematography platform.  
-Start with the **Simple Rig** for quick storytelling and graduate to the **Professional Rig** for cinematic control.  
-With these setups, your virtual camera behaves like its real-world counterpart — smooth, layered, and intuitive.  
+Camera rigs turn After Effects from a 2D animation tool into a true cinematography platform. Start with the **Simple Rig** for quick storytelling and graduate to the **Professional Rig** for cinematic control. With these setups, your virtual camera behaves like its real-world counterpart — smooth, layered, and intuitive.  
 
 > 🪄 *Next:* “Environmental FX & Camera Systems” expands on this by connecting your camera rig to atmospheric depth, light sweeps, and parallax for cinematic environments.
 
@@ -2036,8 +2020,7 @@ For fast, immersive “drone flythroughs” or digital FPV cinematics.
 ────────────────────────────────────────────────────────────────────────
 
 ### 🎬 Summary
-Professional camera rigs go beyond ease—they enable storytelling.  
-From auto-tracking to rack-focus, these systems give After Effects artists true cinematographic control, blending math, motion, and creative instinct.  
+Professional camera rigs go beyond ease—they enable storytelling. From auto-tracking to rack-focus, these systems give After Effects artists true cinematographic control, blending math, motion, and creative instinct.  
 Once mastered, you’ll think less like an animator and more like a **director of photography** — commanding movement, focus, and light with precision.
 
 > 🪄 *Next:* **Professional Camera Rigging – Part III (Motion Design Systems)** expands these concepts into motion-design workflows—introducing spline-based paths, orbit stabilization, auto-framing, and cinematic motion behaviors tailored for title sequences and design-driven animation.
@@ -2302,8 +2285,7 @@ Camera automatically adjusts distance to maintain perfect layout framing when te
 ────────────────────────────────────────────────────────────────────────
 
 ### 🎬 Summary
-Motion-Design Camera Systems elevate After Effects to a professional cinematic toolset.  
-By combining spline motion, auto-framing, and dynamic depth, you can choreograph shots with physical accuracy and artistic intent — all without touching a single keyframe.  
+Motion-Design Camera Systems elevate After Effects to a professional cinematic toolset. By combining spline motion, auto-framing, and dynamic depth, you can choreograph shots with physical accuracy and artistic intent — all without touching a single keyframe.  
 These rigs form the backbone of high-end broadcast design, UI motion, and narrative title sequences.
 
 > 🪄 *Next:* **Environmental FX & Camera Systems** — extend these rigs into atmospheric depth, light sweeps, and environmental realism.
@@ -2906,14 +2888,12 @@ Time control is composition control. With loops, offsets, quantization, and rema
 
 <a id="utility-and-automation"></a>
 ## ⚙️ Utility & Automation — Workflow Enhancements for Efficiency and Consistency
-Utility and automation expressions are the quiet backbone of professional motion design. They don’t draw attention on screen, but they make entire projects faster, more predictable, and far easier to manage.  
-From layer indexing and controller propagation to adaptive timing and project-wide variables, this section gives you the practical toolkit for turning After Effects into a semi-automated production environment.
+Utility and automation expressions are the quiet backbone of professional motion design. They don’t draw attention on screen, but they make entire projects faster, more predictable, and far easier to manage. From layer indexing and controller propagation to adaptive timing and project-wide variables, this section gives you the practical toolkit for turning After Effects into a semi-automated production environment.
 
 ────────────────────────────────────────────────────────────────────────
 
 ### 🧭 Core Idea
-Automation in After Effects isn’t just about scripting—it begins inside the comp, using expressions to create self-updating systems.  
-These patterns reduce repetition, minimize manual fixes, and ensure everything updates automatically when the project changes.  
+Automation in After Effects isn’t just about scripting—it begins inside the comp, using expressions to create self-updating systems. These patterns reduce repetition, minimize manual fixes, and ensure everything updates automatically when the project changes.  
 
 Key benefits:
 - **Scalability:** duplicate complex setups safely—no broken links.  
@@ -3353,8 +3333,7 @@ When every layer speaks a shared logic language, your project becomes self-docum
 
 <a id="appendices-and-resources"></a>
 ## 📎 Appendices & Resources — Quick Reference and Production Library
-The final section of this handbook distills hundreds of expression lessons and workflow ideas into quick, practical references.  
-Use this chapter as your portable toolkit—a jumpstart for creative problem solving, teaching, or daily motion design.
+The final section of this handbook distills hundreds of expression lessons and workflow ideas into quick, practical references. Use this chapter as your portable toolkit—a jumpstart for creative problem solving, teaching, or daily motion design.
 
 ────────────────────────────────────────────────────────────────────────
 
