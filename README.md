@@ -169,21 +169,17 @@ Once you’ve built this foundation, everything else—Text Animation, Physics, 
 ---
 <a id="core-animation-part-ii"></a>
 ## 🎬 Core Animation – Part II: Practical Motion Recipes
-This is your *hands-on* module. Each recipe below includes:
-• What it does  • When to use  • Where to apply  • How to set up  • The expression  • Tuning tips  • A concrete example workflow
-
-────────────────────────────────────────────────────────────────────────
+This is your hands-on module. Each recipe explains what it does, where to apply it, how to set it up, and how to tune it.
 
 ### 🪄 Prerequisites (one-time rig)
-Create a Null named **CTRL**. Add three *Slider Controls* and rename them:
-• Amp (Intensity)  • Freq (Speed)  • Decay (Settle)
+Create a Null named **CTRL** and add three *Slider Controls* (Amp, Freq, Decay). Then use them in any expression:
 
-Reference these in any layer expression:
 ```js
 ctrl=thisComp.layer("CTRL");
 amp =ctrl.effect("Amp")("Slider");
 freq=ctrl.effect("Freq")("Slider");
 decay=ctrl.effect("Decay")("Slider");
+
 ```
 Suggested starting values: Amp **30**, Freq **3**, Decay **4**.
 
