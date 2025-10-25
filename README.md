@@ -465,7 +465,7 @@ if(n>0){
 
 Next → **Text & Type**: apply these same motion principles to typography (per-character delays, overshoots, and rhythm).
 ```
-```markdown
+
 ## 🔠 Text & Type — Practical Motion Recipes
 This is your typography lab. Each recipe below includes full explanations, step-by-step setup, tuning tips, and real-world usage.
 
