@@ -91,11 +91,35 @@ That’s one line:
 ```js
 thisComp.layer("Hero").transform.position - [0,50]
 
-
 ---
 
 ## 🎬 Core Animation
-Elastic, bounce, damping, and motion-flow expressions for shape and logo animation.
+
+### Why “Core Animation” matters
+Core animation patterns are the bread-and-butter of motion design: **overshoot, damping, anticipation, follow-through, delay chains, offsets, and loops**. Mastering these lets you build rigs that feel intentional and alive—without spraying dozens of manual keyframes.
+
+---
+
+### The mental model
+- **Keyframes define intent** (poses and timings).
+- **Expressions define behavior** (how motion gets from A → B, or responds to other layers).
+- **Controllers** centralize tweakable parameters so you adjust motion globally.
+
+---
+
+### Quick setup: the minimal control rig (recommended)
+1) Add a Null named **CTRL** (Layer → New → Null Object).
+2) Apply **Expression Controls → Slider Control** three times; rename sliders:
+   - **Amp** (amplitude/strength)
+   - **Freq** (frequency/speed of oscillation)
+   - **Decay** (how quickly it settles)
+3) You’ll reference them as:
+   ```js
+   ctrl = thisComp.layer("CTRL");
+   amp  = ctrl.effect("Amp")("Slider");
+   freq = ctrl.effect("Freq")("Slider");
+   decay= ctrl.effect("Decay")("Slider");
+
 
 ### Elastic Overshoot
 *(placeholder — you’ll fill later)*
