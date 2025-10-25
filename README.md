@@ -1,11 +1,15 @@
-# 🎬 Kristian Gabriel – AE Scripts & Expressions Handbook
+# 🧠 Introduction to After Effects Expressions
+(Full training section – what expressions are, why you don’t need JavaScript, etc.)
 
-Welcome to your central library of After Effects expressions and micro-training modules.  
-Each category includes explanations, examples, and professional shortcuts for motion design, rigging, and automation.
+---
+
+# 🎬 Kristian Gabriel – AE Scripts & Expressions Handbook
+(Your project intro paragraph.)
 
 ---
 
 ## 📘 Table of Contents
+- [Introduction to Expressions](#introduction-to-after-effects-expressions)
 - [Core Animation](#core-animation)
 - [Text & Type](#text--type)
 - [Motion & Physics](#motion--physics)
@@ -17,10 +21,11 @@ Each category includes explanations, examples, and professional shortcuts for mo
 
 ---
 
-## 🎬 Core Animation
-Elastic, bounce, damping, and motion-flow expressions for shape and logo animation.
+## 🧠 Introduction to After Effects Expressions
+(Repeat a short summary here or link back to top.)
+> A practical overview of what expressions are and how to use them safely.
 
-### Elastic Overshoot
-```js
-amp = 20; freq = 3; decay = 5;
-value + amp*Math.sin(freq*time*Math.PI)*Math.exp(-decay*time);
+---
+
+## 🎬 Core Animation
+(Your first technical category begins here.)
