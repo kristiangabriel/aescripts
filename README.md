@@ -6,7 +6,7 @@ Welcome to your central library of After Effects expressions and micro-training 
 ## 📘 Table of Contents
 - [Introduction to Expressions](#-introduction-to-after-effects-expressions)
 - [Core Animation](#-core-animation)
-- [Core Animation – Part II: Practical Motion Recipes](#core-animation--part-ii-practical-motion-recipes)
+- [Core Animation – Part II: Practical Motion Recipes](#core-animation-part-ii)
 - [Text & Type](#-text--type)
 - [Motion & Physics](#-motion--physics)
 - [Controllers & Rigging](#-controllers--rigging)
@@ -166,6 +166,8 @@ Once you’ve built this foundation, everything else—Text Animation, Physics, 
 
 > 🪄 *Next:* “Core Animation – Part II” introduces the first real movement recipes: Elastic Overshoot, Delay Chains, and Follow-Through.
 
+---
+<a id="core-animation-part-ii"></a>
 ## 🎬 Core Animation – Part II: Practical Motion Recipes
 Welcome to the hands-on half of Core Animation.  
 Each exercise shows **what the behavior does**, **where to apply it**, and **how to direct it** so you can create realistic, dynamic motion without endless keyframes.
