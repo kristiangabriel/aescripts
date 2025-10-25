@@ -6,6 +6,7 @@ Welcome to your central library of After Effects expressions and micro-training 
 ## 📘 Table of Contents
 - [Introduction to Expressions](#-introduction-to-after-effects-expressions)
 - [Core Animation](#-core-animation)
+- [Core Animation – Part II: Practical Motion Recipes](#core-animation--part-ii-practical-motion-recipes)
 - [Text & Type](#-text--type)
 - [Motion & Physics](#-motion--physics)
 - [Controllers & Rigging](#-controllers--rigging)
@@ -164,3 +165,164 @@ Once you’ve built this foundation, everything else—Text Animation, Physics, 
 ---
 
 > 🪄 *Next:* “Core Animation – Part II” introduces the first real movement recipes: Elastic Overshoot, Delay Chains, and Follow-Through.
+
+```markdown
+## 🎬 Core Animation – Part II: Practical Motion Recipes
+Welcome to the hands-on half of Core Animation.  
+Each exercise shows **what the behavior does**, **where to apply it**, and **how to direct it** so you can create realistic, dynamic motion without endless keyframes.
+
+---
+
+### 🪄 Universal Controller Setup
+Create a Null named **CTRL** and add three Slider Controls:
+- **Amp (Intensity)** – overall strength  
+- **Freq (Speed)** – oscillation rate  
+- **Decay (Settle)** – how quickly motion dies out  
+
+Reference them in any layer expression:
+```js
+ctrl=thisComp.layer("CTRL");
+amp=ctrl.effect("Amp")("Slider");
+freq=ctrl.effect("Freq")("Slider");
+decay=ctrl.effect("Decay")("Slider");
+```
+
+---
+
+### Elastic Overshoot
+Adds a natural rebound when a move finishes.  
+**Use on:** Scale or Position.  
+```js
+t=time-inPoint;
+value+amp*Math.sin(freq*t*2*Math.PI)*Math.exp(-decay*t);
+```
+Raise Decay = snappier; raise Freq = tighter bounce; lower Amp = subtle polish.
+
+---
+
+### Velocity-Based Elastic
+Bounce strength follows impact speed.
+```js
+n=(numKeys>0)?nearestKey(time).index:0;
+if(n&&key(n).time>time)n--;
+if(n>0){
+  t=time-key(n).time;
+  v=velocityAtTime(key(n).time-thisComp.frameDuration/10);
+  value+v*(amp/200)*Math.sin((freq/30)*t*2*Math.PI)/Math.exp((decay/10)*t);
+}else{value}
+```
+Faster movement → stronger rebound.
+
+---
+
+### Delay Chain (“Follow the Leader”)
+Let duplicates trail a lead layer.
+```js
+leader=thisComp.layer("Leader");
+delayPerLayer=0.05;
+lag=(thisLayer.index-leader.index)*delayPerLayer;
+valueAtTime(time-lag);
+```
+Smaller delay = tighter grouping.
+
+---
+
+### Anticipation
+Adds pre-motion for intention.  
+```js
+lead=0.06;
+nudge=[-20,0];
+t=time+lead;
+valueAtTime(t)+nudge*Math.exp(-t*10);
+```
+Use short lead values for snappy cues.
+
+---
+
+### Follow-Through
+Trailing parts ease after the main body stops.
+```js
+lag=0.08;
+damp=6;
+base=valueAtTime(time-lag);
+delta=value-base;
+base+delta*Math.exp(-damp*lag);
+```
+Increase lag for softness; raise damp for crisp stop.
+
+---
+
+### Bounce & Drop
+Simulate gravity and energy loss.
+```js
+g=1800;b=0.45;floorY=900;
+t=time-inPoint;
+y=value[1]+g*t*t/2;
+if(y>floorY){
+  t=Math.sqrt(2*(y-floorY)/g);
+  v=g*t*(1-b);
+  y=floorY-v*v/(2*g);
+}
+[value[0],y];
+```
+Lower b = flatter bounce; higher b = rubberier hit.
+
+---
+
+### Squash & Stretch
+Deform scale based on motion speed.
+```js
+maxSquash=22;
+speed=length(velocity)/thisComp.frameDuration;
+k=clamp(speed/800,0,1);
+[sx,sy]=[100+maxSquash*k,100-maxSquash*k];
+[sx,sy];
+```
+Parent rotation to travel direction for realism.
+
+---
+
+### Loops & Oscillation
+```js
+// Ping-pong existing keys
+loopOut("pingpong");
+
+// Continuous sine oscillator
+amp=15;freq=1.2;
+value+amp*Math.sin(freq*time*2*Math.PI);
+```
+Keep Amp small for gentle ambient motion.
+
+---
+
+### Marker-Triggered Pop
+Fire an effect exactly on layer markers.
+```js
+n=0;
+if(marker.numKeys>0){
+  n=marker.nearestKey(time).index;
+  if(marker.key(n).time>time)n--;
+}
+if(n>0){
+  t=time-marker.key(n).time;
+  value+30*Math.sin(6*t*2*Math.PI)*Math.exp(-5*t);
+}else{value}
+```
+Great for musical hits or timed pulses.
+
+---
+
+### Troubleshooting Cheatsheet
+• Nothing moves → Check layer names and keyframes.  
+• Too wild → Lower Amp or raise Decay.  
+• Snapping → Increase sample offset in velocity version.  
+• Followers off → Positive delay values only.  
+• Slow preview → Simplify nested expressions.
+
+---
+
+By mastering these patterns you learn the core grammar of motion—overshoot, anticipation, follow-through, delay, and looping.  
+Every later category—Text & Type, Physics, Rigging—builds on these foundations.
+
+> 🪄 *Next:* Proceed to **Text & Type** to apply these same motion principles to typography.
+```
