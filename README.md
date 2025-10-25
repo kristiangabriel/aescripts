@@ -1,5 +1,5 @@
 # 🎬 Kristian Gabriel – AE Scripts & Expressions Handbook
-Welcome to your central library of After Effects expressions and micro-training modules. Each category includes explanations, examples, and professional shortcuts for motion design, rigging, and automation.
+Welcome to your central library of After Effects expressions and micro-training modules. My name is Kristian Gabriel, Creative Director,Graphic & Motion Design Artist, and other things they haven't defined yet. LOL. The following is a WORK IN PROGRESS and something I wish I would have had when I was learning After Effects. Once again, this is a work in progress and there are definitely issues and errors. Please bring them to my attention and I would be happy to fix them. I fully acknowledge that every motion designer will do and code things differently and thats okay! At the end of the day its about all of us getting our work done and meeting those deadlines. I have information, you have information, we all have information and between...hopefully all this can help those who need it. Anyways! Each category includes explanations, examples, and professional shortcuts for motion design, rigging, and automation. Hope you have fun and enjoy!
 
 ---
 
