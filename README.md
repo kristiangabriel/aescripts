@@ -181,9 +181,7 @@ This is your hands-on module. Each recipe explains what it does, where to apply 
 
 ### 🎛 Setting Up the Universal Controller (Step-by-Step)
 
-Every Core Animation recipe that follows depends on one simple idea: **one layer to rule them all.**  
-This “controller” acts as a central nervous system for your motion logic—feeding amplitude, frequency, and decay values to every other expression in your comp.  
-It allows you to change how your animations behave globally without digging into code every time.
+Every Core Animation recipe that follows depends on one simple idea: **one layer to rule them all.** This “controller” acts as a central nervous system for your motion logic—feeding amplitude, frequency, and decay values to every other expression in your comp. It allows you to change how your animations behave globally without digging into code every time.
 
 Here’s how to build it:
 
@@ -215,9 +213,7 @@ Here’s how to build it:
    decay = ctrl.effect("Decay")("Slider");
    ```
 
-   This code links the property to the controller’s sliders.  
-   Every expression that follows—Overshoot, Bounce, Follow-Through, Delay Chains, and others—will be written directly *below* these four lines.  
-   You’ll paste the motion logic (the actual expression) underneath this connection block so it can read the same amplitude, frequency, and decay values.
+   This code links the property to the controller’s sliders. Every expression that follows—Overshoot, Bounce, Follow-Through, Delay Chains, and others—will be written directly *below* these four lines. You’ll paste the motion logic (the actual expression) underneath this connection block so it can read the same amplitude, frequency, and decay values.
 
 ---
 
@@ -233,8 +229,7 @@ freq  = 4;    // how many cycles per second
 decay = 2;    // how quickly motion loses energy
 ```
 
-You can adjust these numbers manually to change the feel of the motion.  
-This approach is great for quick experiments or one-off effects where you don’t need a shared global controller.
+You can adjust these numbers manually to change the feel of the motion. This approach is great for quick experiments or one-off effects where you don’t need a shared global controller.
 
 ---
 
