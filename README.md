@@ -179,17 +179,138 @@ Once you’ve built this foundation, everything else—Text Animation, Physics, 
 ## 🎬 Core Animation – Part II: Practical Motion Recipes
 This is your hands-on module. Each recipe explains what it does, where to apply it, how to set it up, and how to tune it.
 
-### 🪄 Prerequisites (one-time rig)
-Create a Null named **CTRL** and add three *Slider Controls* (Amp, Freq, Decay). Then use them in any expression:
+### 🎛 Setting Up the Universal Controller (Step-by-Step)
+
+Every Core Animation recipe that follows depends on one simple idea: **one layer to rule them all.**  
+This “controller” acts as a central nervous system for your motion logic—feeding amplitude, frequency, and decay values to every other expression in your comp.  
+It allows you to change how your animations behave globally without digging into code every time.
+
+Here’s how to build it:
+
+1. **Create a Null Layer**  
+   Go to **Layer → New → Null Object**, rename it `CTRL` (short for “Controller”), and keep it visible at the top of your layer stack.
+
+2. **Add Three Slider Controls**  
+   With the `CTRL` layer selected, go to **Effect → Expression Controls → Slider Control** three times.  
+   Rename them **Amp**, **Freq**, and **Decay**.  
+   - **Amp (Amplitude):** controls how strong or far the motion travels.  
+   - **Freq (Frequency):** controls how fast the oscillation occurs.  
+   - **Decay:** controls how quickly motion loses energy and settles.
+
+3. **Understand What You’ve Created**  
+   These sliders don’t animate anything by themselves—they simply store values.  
+   Each upcoming expression will read these sliders and translate them into motion.  
+   One controller can therefore drive hundreds of animated properties across your comp.
+
+4. **Connect the Controller to a Property**  
+   Choose a property to animate (e.g., Position, Rotation, or Scale).  
+   Hold **Alt/Option** and click the property’s stopwatch to open the expression field.  
+   Then paste this controller code at the top of your expression:
+
+   ```js
+   // Connect to the universal controller
+   ctrl  = thisComp.layer("CTRL");
+   amp   = ctrl.effect("Amp")("Slider");
+   freq  = ctrl.effect("Freq")("Slider");
+   decay = ctrl.effect("Decay")("Slider");
+   ```
+
+   This code links the property to the controller’s sliders.  
+   Every expression that follows—Overshoot, Bounce, Follow-Through, Delay Chains, and others—will be written directly *below* these four lines.  
+   You’ll paste the motion logic (the actual expression) underneath this connection block so it can read the same amplitude, frequency, and decay values.
+
+---
+
+### ⚙️ Alternate Setup (No Controller)
+
+If you’d rather skip the controller entirely and just hard-code the values directly into your expression,  
+you can replace the four “ctrl” lines with simple variable declarations:
 
 ```js
-ctrl=thisComp.layer("CTRL");
-amp =ctrl.effect("Amp")("Slider");
-freq=ctrl.effect("Freq")("Slider");
-decay=ctrl.effect("Decay")("Slider");
-
+// Direct numeric setup (no external controller needed)
+amp   = 30;   // how strong or far the motion travels
+freq  = 4;    // how many cycles per second
+decay = 2;    // how quickly motion loses energy
 ```
-Suggested starting values: Amp **30**, Freq **3**, Decay **4**.
+
+You can adjust these numbers manually to change the feel of the motion.  
+This approach is great for quick experiments or one-off effects where you don’t need a shared global controller.
+
+---
+
+### 🧩 How It Works Behind the Scenes
+
+When After Effects evaluates an expression, it:
+1. Finds the `CTRL` layer (if you’re using one).  
+2. Reads the sliders’ current values for Amp, Freq, and Decay.  
+3. Substitutes those values directly into the motion formula you’ve written underneath.  
+
+Because this happens live, you can tweak the sliders in real time to control motion intensity, speed, or damping—without rewriting or reapplying code.
+
+Example of how the values drive motion:
+
+```js
+value + amp * Math.sin(freq * time * 2 * Math.PI) * Math.exp(-decay * time);
+```
+
+- `amp` controls **strength** or distance of movement.  
+- `freq` controls **oscillation speed** (how many bounces per second).  
+- `decay` controls **falloff** (how quickly it slows down and settles).
+
+---
+
+### 🔁 Why This Rig Matters
+
+- **Scalability:** One rig can control motion across the entire composition or project.  
+- **Consistency:** Every bounce or overshoot follows identical timing and physics.  
+- **Speed:** You can change motion characteristics globally without touching code.  
+- **Safety:** If a property breaks, you only troubleshoot one controller, not dozens of expressions.  
+- **Clarity:** Centralized control keeps your project organized and readable.
+
+The controller layer becomes your animation “brain”—a single source of truth for all motion systems in the comp.
+
+---
+
+### 🪄 Pro Tips & Extras
+
+**1. Modular Controllers**  
+You can build additional controller nulls for different systems:  
+- `CTRL_CAM` → controls camera motion (e.g., shake, dolly, or zoom).  
+- `CTRL_UI` → controls interface reactions (e.g., button press elasticity).  
+- `CTRL_ENV` → controls environmental effects (e.g., wind or object sway).  
+Just change the reference line in your expressions:  
+```js
+ctrl = thisComp.layer("CTRL_UI");
+```
+This lets you isolate motion logic per category while maintaining clean organization.
+
+**2. Quick Preview Tip**  
+If your animation looks too fast or jittery, lower `freq` or raise `decay`.  
+If it looks sluggish or lifeless, increase `freq` or `amp` slightly.
+
+**3. Expression Efficiency**  
+You can copy the same expression to multiple layers—every instance will reference the same controller.  
+That means you can adjust an entire animation system in real time using just three sliders.
+
+**4. Combine With Other Controls**  
+For more complex rigs, add extra sliders such as **Speed**, **Delay**, or **Noise**—then reference them the same way.  
+Each new control can add its own flavor of behavior to your existing animation.
+
+**5. Safety Net**  
+If a referenced slider doesn’t exist, AE will throw an error.  
+You can wrap the connection lines in `try/catch` statements or use default values like:
+```js
+try{ amp = ctrl.effect("Amp")("Slider"); }catch(e){ amp = 30; }
+```
+This prevents missing-controller errors and keeps the project running smoothly.
+
+---
+
+Once this rig is in place, **every Core Animation expression in this handbook**—from Elastic Overshoot and Bounce to Delay Chains, Follow-Through, and Loop Systems—will begin with either:
+- the **Controller Block** (if you’re using the `CTRL` null), or  
+- the **Direct Numeric Block** (if you’re hard-coding values).  
+
+Paste your desired motion expression directly beneath those variables, and the math will instantly respond to your chosen control method. You’ve now built the heartbeat of your animation system—the part that makes all expressions feel connected, flexible, and alive. Suggested starting values: Amp **30**, Freq **3**, Decay **4**.
 
 ────────────────────────────────────────────────────────────────────────
 
