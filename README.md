@@ -1127,7 +1127,7 @@ else {
 
 ────────────────────────────────────────────────────────────────────────
 
-### 🎥 Handheld / Camera Shake — physically-inspired (self-contained, one-paste setup)
+### 10) 🎥 Handheld / Camera Shake — physically-inspired (self-contained, one-paste setup)
 
 **What this gives you:** a production-ready, realistic handheld rig that works on **Position** (or a 3D Null that parents your Camera) and on **Orientation/Rotation**.  
 It blends low-frequency *drift*, high-frequency *micro-jitter*, and subtle *shoulder-pivot roll/tilt* driven by velocity — with seedable randomness, smooth strength control, and safe fallbacks (no sliders required).
