@@ -412,219 +412,273 @@ Amp = 25, Freq = 3.5, Decay = 5 → snappy logo pop that overshoots naturally an
 ────────────────────────────────────────────────────────────────────────
 
 ### 2) Delay Chain — “follow the leader”
-**What it does:** Duplicates trail a leader with a per-layer time offset (beautiful cascades).  
+
+**What it does:** Followers trail a leader with a per-layer time offset.  
 **When to use:** Stacks of cards, ribbons, list reveals, dot trails.  
 **Where:** Followers’ Position/Rotation/Scale.
 
 **How to set up:**
-1) Name your lead layer **Leader**.
-2) Duplicate your follower layers.
-3) Paste on followers’ animated property.
+1. Name your lead layer **Leader** (or change the name below).
+2. Paste on each follower’s animated property.
 
-**Expression:**
+**Expression (robust with safety + optional per-layer slider):**
 ```js
-leader=thisComp.layer("Leader");
-delayPerLayer=0.05; // seconds between indices
-lag=(thisLayer.index - leader.index) * delayPerLayer;
-valueAtTime(time - lag);
+var leaderName = "Leader";
+var delayPerLayer = 0.05; // seconds between indices (use a Slider named "Delay" to override)
+
+// Optional per-layer control (if a Slider named "Delay" exists)
+try{ delayPerLayer = effect("Delay")("Slider"); }catch(e){}
+
+var L;
+try{ L = thisComp.layer(leaderName); }catch(e){ L = null; }
+if (!L){ value } else {
+  var lag = (index - L.index) * delayPerLayer;
+  valueAtTime(time - lag);
+}
 ```
 
 **Tune:** Smaller **delayPerLayer** = tighter wave; larger = more laggy flow.  
-**Example workflow:** Animate Position on Leader only → duplicate 8x → instant cascading reveal.
+**Tip:** If your leader sits *below* followers in the stack, the sign will flip—use a negative **delayPerLayer** to reverse.
 
-────────────────────────────────────────────────────────────────────────
+
+---
 
 ### 3) Anticipation — pre-motion nudge
-**What it does:** Tiny “wind-up” before motion that clarifies intent and adds snap.  
+
+**What it does:** Tiny “wind-up” before the move for clarity and snap.  
 **When to use:** Characters, cursors, buttons about to move.  
-**Where:** Position.
+**Where:** Position (vector) or Rotation/Opacity (scalar).
 
-**How to set up:** Paste on the moving layer’s Position (works with or without additional keys).
+**How to set up:** Paste on the moving property. Works with or without extra keys.
 
-**Expression:**
+**Expression (works for 1D or 2D/3D):**
 ```js
-lead=0.06;          // seconds of look-ahead
-nudge=[-20,0];      // oppose main move (example: going right → nudge left)
-t=time + lead;
-valueAtTime(t) + nudge*Math.exp(-t*10);
+var lead = 0.06;   // seconds to look ahead
+var decay = 10;    // higher = quicker disappearance
+
+// Nudge amounts for vectors vs. scalars
+var nudgeScalar = -10;         // Rotation/Opacity/etc. (counter-move)
+var nudgeVec2   = [-20, 0];    // Position 2D
+var nudgeVec3   = [-20, 0, 0]; // Position 3D
+
+var t = time + lead;
+var base = valueAtTime(t);
+var factor = Math.exp(-lead * decay);
+
+if (typeof value === "number"){
+  base + nudgeScalar * factor;
+}else{
+  if (value.length === 2){
+    base + [nudgeVec2[0]*factor, nudgeVec2[1]*factor];
+  }else{
+    base + [nudgeVec3[0]*factor, nudgeVec3[1]*factor, nudgeVec3[2]*factor];
+  }
+}
 ```
 
-**Tune:** Shorter **lead** = snappier cue; adjust **nudge** direction/amount for taste.  
-**Example workflow:** Button grows on hover → add a tiny left nudge before its rightward slide.
+**Tune:** Shorter **lead** = snappier cue. Reverse nudge signs to match your main move direction.
 
-────────────────────────────────────────────────────────────────────────
+
+---
 
 ### 4) Follow-Through — secondary settle
+
 **What it does:** Child parts trail and settle after the body stops (inertia).  
 **When to use:** Flags, pointers, accents, limbs.  
 **Where:** Rotation or Position of the *trailing* piece.
 
-**How to set up:** Parent the trailing piece to the main object. Paste on the trailer.
+**How to set up:** Parent the trailer to the main object. Paste on the trailer.
 
-**Expression:**
+**Expression (safer at comp start, works 1D/2D/3D):**
 ```js
-lag = 0.08;  // how far behind
-damp= 6;     // higher = crisper stop
-base = valueAtTime(time - lag);
-delta= value - base;
-base + delta*Math.exp(-damp*lag);
+var lag = 0.08; // seconds behind
+var damp = 6;   // higher = crisper stop
+
+var t0 = Math.max(inPoint, time - lag);
+var base = valueAtTime(t0);
+var delta = value - base; // component-wise in AE
+base + delta * Math.exp(-damp * lag);
 ```
 
 **Tune:** Increase **lag** for softer drag; increase **damp** for a quicker stop.  
-**Example workflow:** A pointer arrow rotates; its tail cap follows with lag for lively overlap.
+**Tip:** Put this on children only; the parent carries the main motion.
 
-────────────────────────────────────────────────────────────────────────
 
-### 5) Bounce & Drop — gravity + energy loss
-**What it does:** Simulates vertical drop with diminishing bounces.  
+---
+
+### 5) Bounce & Drop — gravity-style settles
+
+**What it does:** Simulates a vertical drop with diminishing bounces (visual, lightweight).  
 **When to use:** Dropping icons, chips, badges.  
-**Where:** Position (Y).
+**Where:** **Position only** (adds to Y).
 
-**How to set up:** Paste on Position and set `floorY` to your ground.
+**How to set up:** Paste on Position; set `floorY` to your ground line.
 
-**Expression:**
+**Expression (lightweight visual model with decaying bounces):**
 ```js
-g=1800;          // gravity
-b=0.45;          // bounciness (0..1)
-floorY=900;      // ground Y
+var floorY   = 900;   // ground Y
+var amp0     = 300;   // initial drop height (pixels)
+var freq     = 6;     // bounces per second
+var decay    = 3.2;   // energy loss rate
+var startT   = inPoint;
 
-t=time - inPoint;
-y=value[1] + g*t*t/2;
+var t = Math.max(0, time - startT);
 
-if (y>floorY){
-  t = Math.sqrt(2*(y-floorY)/g);
-  v = g*t*(1-b);
-  y = floorY - v*v/(2*g);
+// Decaying absolute-sine bounce from the floor
+var bounce = Math.abs(Math.sin(freq * t * Math.PI)) * Math.exp(-decay * t);
+var y = floorY - amp0 * bounce;
+
+// Preserve X/Z as-is
+if (value.length === 2){
+  [value[0], y]
+}else{
+  [value[0], y, value[2]]
 }
-[value[0], y];
 ```
 
-**Tune:** Lower **b** = flatter, higher **b** = rubberier. Adjust **floorY** to your comp.  
-**Example workflow:** Badge drops into frame, hits “ground,” then settles with two quick diminishing bounces.
+**Tune:** Lower **decay** = more bounces; raise **freq** for tighter taps; adjust **amp0** to set initial height.  
+**Note:** This is a clean visual model (fast & stable). For true gravity impacts with variable intervals, use a physics loop—heavier but more exact.
 
-────────────────────────────────────────────────────────────────────────
+
+---
 
 ### 6) Squash & Stretch — speed-aware (smoothed)
+
 **What it does:** Deforms Scale based on **motion speed**, smoothed to avoid jitter; returns to 100% at rest.  
 **When to use:** Bouncy UI chips, balls, stickers; character motion.  
-**Where:** Scale.
+**Where:** **Scale**.
 
-**How to set up (self-driven):** Layer (or its parent) must actually move.
-
-**Expression (self-driven):**
+**Self-driven (layer must move):**
 ```js
-maxSquash=22; normSpeed=800; smoothWin=0.10; samples=5;
-dt=thisComp.frameDuration;
+var maxSquash = 22;   // % change at high speed
+var normSpeed = 800;  // speed that yields maxSquash
+var smoothWin = 0.10; // seconds to average over
+var samples   = 5;
+var dt = thisComp.frameDuration;
 
 function spdAt(t){
-  p1=transform.position.valueAtTime(t);
-  p0=transform.position.valueAtTime(t - dt);
-  v=(p1-p0)/dt;
-  return length(v);
+  var p1 = transform.position.valueAtTime(t);
+  var p0 = transform.position.valueAtTime(t - dt);
+  return length((p1 - p0) / dt);
 }
 
-sum=0;
-for(i=0;i<samples;i++){
-  tt=time - i*(smoothWin/Math.max(1,(samples-1)));
-  sum+=spdAt(tt);
+var sum = 0;
+for (var i=0; i<samples; i++){
+  var tt = time - i * (smoothWin / Math.max(1, (samples-1)));
+  sum += spdAt(tt);
 }
-spd=sum/samples;
+var spd = sum / samples;
 
-k = clamp(spd/normSpeed,0,1);
-sx=100 + (maxSquash*k);
-sy=100 - (maxSquash*k);
-[sx,sy];
+var k = clamp(spd / normSpeed, 0, 1);
+var sx = 100 + (maxSquash * k);
+var sy = 100 - (maxSquash * k);
+
+// Prevent negative or zero scale
+[sx, Math.max(1, sy)]
 ```
 
-**Alternative (leader-driven):** Works even if this layer is static; follows a layer named “Leader”.
+**Leader-driven (works even if this layer is static):**
 ```js
-leader=thisComp.layer("Leader");
-maxSquash=22; normSpeed=800; smoothWin=0.10; samples=5;
-dt=thisComp.frameDuration;
+var leader = thisComp.layer("Leader");
+var maxSquash = 22, normSpeed = 800, smoothWin = 0.10, samples = 5;
+var dt = thisComp.frameDuration;
 
 function spdAt(t){
-  p1=leader.transform.position.valueAtTime(t);
-  p0=leader.transform.position.valueAtTime(t - dt);
-  v=(p1-p0)/dt;
-  return length(v);
+  var p1 = leader.transform.position.valueAtTime(t);
+  var p0 = leader.transform.position.valueAtTime(t - dt);
+  return length((p1 - p0) / dt);
 }
 
-sum=0;
-for(i=0;i<samples;i++){
-  tt=time - i*(smoothWin/Math.max(1,(samples-1)));
-  sum+=spdAt(tt);
+var sum = 0;
+for (var i=0; i<samples; i++){
+  var tt = time - i * (smoothWin / Math.max(1, (samples-1)));
+  sum += spdAt(tt);
 }
-spd=sum/samples;
+var spd = sum / samples;
 
-k = clamp(spd/normSpeed,0,1);
-sx=100 + (maxSquash*k);
-sy=100 - (maxSquash*k);
-[sx,sy];
+var k = clamp(spd / normSpeed, 0, 1);
+var sx = 100 + (maxSquash * k);
+var sy = 100 - (maxSquash * k);
+[sx, Math.max(1, sy)]
 ```
 
-**Optional add-on (Rotation → face travel direction):**
-```js
-dt=thisComp.frameDuration;
-p1=transform.position;
-p0=transform.position.valueAtTime(time-dt);
-v=p1-p0; spd=length(v);
-(spd>0.1)?radiansToDegrees(Math.atan2(v[1],v[0])):value;
-```
+**Tune:** Lower **maxSquash** for subtlety; raise **normSpeed** if your motion is very fast; increase **smoothWin/samples** to calm jitter.
 
-**Tune:** Lower **maxSquash** for subtlety; raise **normSpeed** if your motion is fast; increase **smoothWin/samples** to calm jitter.  
-**Example workflow:** Ball moves across screen (Position keys). S&S on Scale delivers lively stretch on fast parts, subtle squash on slowdowns, and returns to 100% when still.
 
-────────────────────────────────────────────────────────────────────────
+---
 
 ### 7) Loops & Oscillation — perpetual motion
+
 **What it does:** Keeps motion alive either from keyframes (ping-pong) or pure math (oscillator).  
 **When to use:** Breathing icons, pulsing lights, pendulums.  
 **Where:** Any property.
-
-**How to set up:** Paste one of the following.
 
 **Ping-pong existing keys:**
 ```js
 loopOut("pingpong");
 ```
 
-**Time-based oscillator (no keys):**
+**Time-based oscillator (dimension-safe):**
 ```js
-amp=15; freq=1.2;
-value + amp*Math.sin(freq*time*2*Math.PI);
+var amp = 15, freq = 1.2;
+if (typeof value === "number"){
+  value + amp * Math.sin(freq * time * 2 * Math.PI);
+}else{
+  // add on Y for vectors (Position), uniform for Scale
+  if (thisProperty.matchName === "ADBE Scale"){
+    var d = value.length;
+    var add = (d===2) ? [amp, amp] : [amp, amp, amp];
+    value + add * Math.sin(freq * time * 2 * Math.PI);
+  }else{
+    var s = amp * Math.sin(freq * time * 2 * Math.PI);
+    (value.length===2) ? [value[0], value[1] + s] : [value[0], value[1] + s, value[2]];
+  }
+}
 ```
 
-**Tune:** Use small **amp** for tasteful “alive” motion.  
-**Example workflow:** Two keyframes on Rotation for a small swing → `loopOut("pingpong")` → endless pendulum.
+**Tune:** Use small **amp** for tasteful “alive” motion.
 
-────────────────────────────────────────────────────────────────────────
+
+---
 
 ### 8) Marker-Triggered Pop — manual beats/cues
+
 **What it does:** Fires a quick bounce exactly on your **layer markers**.  
 **When to use:** Musical hits, UI pips, timed pulses.  
-**Where:** Scale or Opacity.
+**Where:** Scale or Opacity (works on others too).
 
 **How to set up:**
-1) Add markers (`*` shortcut) where hits should happen.
-2) Paste on the property.
+1. Add markers (`*`) exactly where hits should happen.
+2. Paste on the property.
 
-**Expression:**
+**Expression (dimension-safe):**
 ```js
-n=0;
-if(marker.numKeys>0){
-  n=marker.nearestKey(time).index;
-  if(marker.key(n).time>time) n--;
+var n = 0;
+if (marker.numKeys > 0){
+  n = marker.nearestKey(time).index;
+  if (marker.key(n).time > time) n--;
 }
-if(n>0){
-  t=time - marker.key(n).time;
-  value + 30*Math.sin(6*t*2*Math.PI)*Math.exp(-5*t);
+if (n > 0){
+  var t = time - marker.key(n).time;
+  var amp = 30, freq = 6, decay = 5;
+  var kick = amp * Math.sin(freq * t * 2 * Math.PI) * Math.exp(-decay * t);
+
+  if (typeof value === "number"){
+    value + kick;
+  }else{
+    if (thisProperty.matchName === "ADBE Scale"){
+      var add = (value.length===2) ? [kick, kick] : [kick, kick, kick];
+      value + add;
+    }else{
+      (value.length===2) ? [value[0], value[1] + kick] : [value[0], value[1] + kick, value[2]];
+    }
+  }
 }else{
   value;
 }
 ```
 
-**Tune:** Adjust the `30`, `6`, and `5` trinity (amplitude, frequency, decay) to fit your track.  
-**Example workflow:** Place markers on kick hits; Scale pulses perfectly in sync.
+**Tune:** Adjust the `amp / freq / decay` trio to fit your track; place markers on kick/snare for instant sync.
 
 ────────────────────────────────────────────────────────────────────────
 
