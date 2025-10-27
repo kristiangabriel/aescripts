@@ -309,59 +309,109 @@ Paste your desired motion expression directly beneath those variables, and the m
 
 ────────────────────────────────────────────────────────────────────────
 
-### 1) Elastic Overshoot — consistent rebound
-**What it does:** Adds a springy rebound as the layer comes to rest (same size every time).  
-**When to use:** Logo pop-ins, buttons releasing, icons landing.  
+### 1) Elastic Overshoot — universal rebound
+
+**What it does:** Creates a realistic, springy overshoot whether the motion is keyframed or not.  
+**When to use:** Logo pop-ins, button releases, objects landing, or panels snapping into place.  
 **Where:** Scale, Position, or Rotation of the animated layer.
 
-**How to set up (quick):**
-1) Keyframe your base move (optional, but looks best).
-2) Paste the expression on the target property.
-
-**Expression:**
-```js
-t=time-inPoint;
-value + amp*Math.sin(freq*t*2*Math.PI)*Math.exp(-decay*t);
-```
-
-**Tune:** Higher **Decay** = quicker settle; higher **Freq** = tighter bounce; lower **Amp** = subtler.  
-**Example workflow:** Animate Scale 0%→100% in 12f. Amp 25, Freq 3.5, Decay 5 for a tidy logo pop.
-
-────────────────────────────────────────────────────────────────────────
-
-### 2) Elastic Overshoot — velocity-based (reactive)
-**What it does:** Overshoot size responds to the actual **arrival speed** at the last keyframe.  
-**When to use:** Physical UI, character hits, panels that slam vs. drift.  
-**Where:** Any **keyframed** property.
-
 **How to set up:**
-1) Animate your layer to a key pose.
-2) Paste the expression on that property.
+1. Animate your layer to its final position or scale (optional, but looks best).  
+2. Paste the expression on that property.  
+3. If you already built the controller rig, replace the numeric lines at the top with your `CTRL` setup block.
 
 **Expression:**
 ```js
-// normalize CTRL sliders for velocity use
-amp  = amp/200;
-freq = freq/30;
-decay= decay/10;
+// Elastic Overshoot — robust & self-contained
+// Works on 1D (Rotation/Opacity) and 2D/3D (Position/Scale/Point)
 
-n=(numKeys>0)?nearestKey(time).index:0;
-if(n && key(n).time>time) n--;
-if(n>0){
-  t=time-key(n).time;
-  v=velocityAtTime(key(n).time - thisComp.frameDuration/10);
-  value + v*amp*Math.sin(freq*t*2*Math.PI)*Math.exp(-decay*t);
+// ---- Controls (direct numeric; replace with CTRL rig if you want) ----
+var amp   = 30;  // overall strength (try 20–60)
+var freq  = 4;   // bounces per second (2–6)
+var decay = 2;   // how quickly it settles (1.5–4)
+
+// ---- Helper: dimension-agnostic add ----
+function addVec(a, b){
+  if (typeof a === "number") return a + b;
+  var d = a.length, out = [];
+  for (var i=0; i<d; i++) out[i] = a[i] + (Array.isArray(b) ? b[i]||0 : b);
+  return out;
+}
+
+// ---- Find trigger time (last keyframe before now; else layer inPoint) ----
+var hasKeys = (numKeys > 0);
+var n = hasKeys ? nearestKey(time).index : 0;
+if (hasKeys && key(n).time > time) n--;
+var triggered = (hasKeys && n > 0);
+var t = triggered ? time - key(n).time : Math.max(0, time - inPoint);
+
+// ---- Base signal (sine * decay) ----
+var osc = Math.sin(freq * t * 2 * Math.PI) * Math.exp(-decay * t);
+
+// ---- Direction & magnitude ----
+if (triggered){
+  var preT = key(n).time - thisComp.frameDuration/10;
+  var vel  = velocityAtTime(preT);
+  var mag  = (typeof vel === "number") ? Math.abs(vel) : length(vel);
+  var scaleBySpeed = (amp/100) * mag;
+  var delta;
+  if (typeof value === "number"){
+    var sign = (typeof vel === "number") ? (vel >= 0 ? 1 : -1) : 1;
+    delta = sign * scaleBySpeed * osc;
+  }else{
+    var dir;
+    if (value.length === 2){
+      dir = (mag>0) ? [vel[0]/mag, vel[1]/mag] : [0,0];
+    }else{
+      var v2 = [vel[0]||0, vel[1]||0, vel[2]||0];
+      dir = (mag>0) ? [v2[0]/mag, v2[1]/mag, v2[2]/mag] : [0,0,0];
+    }
+    delta = dir.map(function(c){ return c * scaleBySpeed * osc; });
+  }
+  addVec(value, delta);
 }else{
-  value;
+  var delta2;
+  if (typeof value === "number"){
+    delta2 = amp * osc;
+  }else{
+    if (thisProperty.matchName === "ADBE Scale"){
+      delta2 = (value.length===2) ? [amp*osc, amp*osc] : [amp*osc, amp*osc, amp*osc];
+    }else{
+      delta2 = (value.length===2) ? [0, amp*osc] : [0, amp*osc, 0];
+    }
+  }
+  addVec(value, delta2);
 }
 ```
 
-**Tune:** If it “snaps” at the key, increase the sample offset to `thisComp.frameDuration/5`.  
-**Example workflow:** Big panel flies in, smaller card glides in. Same expression → panel overshoots more because it’s faster.
+**Tuning Guide:**  
+- **Amp → Strength:** how far the overshoot goes.  
+- **Freq → Frequency:** how many bounces per second (higher = faster vibration).  
+- **Decay → Damping:** how quickly it settles (higher = quicker stop).  
+- To link with your controller sliders, replace the numeric block above with:
+  ```js
+  ctrl=thisComp.layer("CTRL");
+  amp=ctrl.effect("Amp")("Slider");
+  freq=ctrl.effect("Freq")("Slider");
+  decay=ctrl.effect("Decay")("Slider");
+  ```
+  Adjust the sliders live for instant feedback.
+
+**Example Workflow:**  
+Animate Scale from 0 → 100 % in 12 frames.  
+Amp = 25, Freq = 3.5, Decay = 5 → snappy logo pop that overshoots naturally and settles smoothly.
+
+---
+
+### 🧠 Why This Update Matters
+- One expression handles both keyframed and non-keyframed motion.  
+- Direction-aware overshoot driven by velocity.  
+- Safe for any property dimension.  
+- Plug-and-play with the Universal Controller Rig.
 
 ────────────────────────────────────────────────────────────────────────
 
-### 3) Delay Chain — “follow the leader”
+### 2) Delay Chain — “follow the leader”
 **What it does:** Duplicates trail a leader with a per-layer time offset (beautiful cascades).  
 **When to use:** Stacks of cards, ribbons, list reveals, dot trails.  
 **Where:** Followers’ Position/Rotation/Scale.
@@ -384,7 +434,7 @@ valueAtTime(time - lag);
 
 ────────────────────────────────────────────────────────────────────────
 
-### 4) Anticipation — pre-motion nudge
+### 3) Anticipation — pre-motion nudge
 **What it does:** Tiny “wind-up” before motion that clarifies intent and adds snap.  
 **When to use:** Characters, cursors, buttons about to move.  
 **Where:** Position.
@@ -404,7 +454,7 @@ valueAtTime(t) + nudge*Math.exp(-t*10);
 
 ────────────────────────────────────────────────────────────────────────
 
-### 5) Follow-Through — secondary settle
+### 4) Follow-Through — secondary settle
 **What it does:** Child parts trail and settle after the body stops (inertia).  
 **When to use:** Flags, pointers, accents, limbs.  
 **Where:** Rotation or Position of the *trailing* piece.
@@ -425,7 +475,7 @@ base + delta*Math.exp(-damp*lag);
 
 ────────────────────────────────────────────────────────────────────────
 
-### 6) Bounce & Drop — gravity + energy loss
+### 5) Bounce & Drop — gravity + energy loss
 **What it does:** Simulates vertical drop with diminishing bounces.  
 **When to use:** Dropping icons, chips, badges.  
 **Where:** Position (Y).
@@ -454,7 +504,7 @@ if (y>floorY){
 
 ────────────────────────────────────────────────────────────────────────
 
-### 7) Squash & Stretch — speed-aware (smoothed)
+### 6) Squash & Stretch — speed-aware (smoothed)
 **What it does:** Deforms Scale based on **motion speed**, smoothed to avoid jitter; returns to 100% at rest.  
 **When to use:** Bouncy UI chips, balls, stickers; character motion.  
 **Where:** Scale.
@@ -526,7 +576,7 @@ v=p1-p0; spd=length(v);
 
 ────────────────────────────────────────────────────────────────────────
 
-### 8) Loops & Oscillation — perpetual motion
+### 7) Loops & Oscillation — perpetual motion
 **What it does:** Keeps motion alive either from keyframes (ping-pong) or pure math (oscillator).  
 **When to use:** Breathing icons, pulsing lights, pendulums.  
 **Where:** Any property.
@@ -549,7 +599,7 @@ value + amp*Math.sin(freq*time*2*Math.PI);
 
 ────────────────────────────────────────────────────────────────────────
 
-### 9) Marker-Triggered Pop — manual beats/cues
+### 8) Marker-Triggered Pop — manual beats/cues
 **What it does:** Fires a quick bounce exactly on your **layer markers**.  
 **When to use:** Musical hits, UI pips, timed pulses.  
 **Where:** Scale or Opacity.
