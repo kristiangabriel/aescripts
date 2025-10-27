@@ -1127,8 +1127,178 @@ else {
 
 ────────────────────────────────────────────────────────────────────────
 
+### 🎥 Handheld / Camera Shake — physically-inspired (self-contained, one-paste setup)
+
+**What this gives you:** a production-ready, realistic handheld rig that works on **Position** (or a 3D Null that parents your Camera) and on **Orientation/Rotation**.  
+It blends low-frequency *drift*, high-frequency *micro-jitter*, and subtle *shoulder-pivot roll/tilt* driven by velocity — with seedable randomness, smooth strength control, and safe fallbacks (no sliders required).
+
+> **How to use (best practice):**  
+> 1) Create a **3D Null** named anything (e.g. `CAM_SHAKE_RIG`), **parent your Camera to it**.  
+> 2) Paste the **Position** expression below on the Null’s **Position**.  
+> 3) Paste the **Orientation** expression on the same Null’s **Orientation** (or **Rotation Z** if preferred).  
+>    *(You can also paste directly on a Camera layer’s Position/Orientation — parenting is just cleaner.)*  
+> 4) Press play. Tweak the controller **sliders (optional)** or the **defaults** inside the code.
+
+---
+
+#### 🔧 Optional sliders (auto-detected)
+If you add *Expression Controls → Slider Controls* to the **same layer** and name them exactly:
+- `Shake Strength` (0–100)
+- `Drift Amp (px)`  
+- `Drift Freq (Hz)`  
+- `Jitter Amp (px)`  
+- `Jitter Freq (Hz)`  
+- `Rot Amp (deg)`  
+- `Rot Jitter (deg)`  
+- `Seed`
+
+…the expressions will read them automatically. If no sliders exist, sensible **defaults** are used.
+
+---
+
+#### ✳️ POSITION (paste on Position of the parent Null or Camera)
+
+```js
+// ===== Handheld Camera - POSITION (realistic drift + jitter) =====
+// Works on 3D Position. Paste on a 3D Null that parents your Camera, or on the Camera Position itself.
+
+// ------- Safe controller fetch with defaults -------
+function ctrl(name, def){
+  try{ return effect(name)("Slider").value; }catch(e){ return def; }
+}
+
+// Master strength (0..100) scales all motion
+var STRENGTH = ctrl("Shake Strength", 60); // %
+var strength = clamp(STRENGTH/100, 0, 1);
+
+// Low-frequency drift (body/arm wander)
+var DRIFT_AMP = ctrl("Drift Amp (px)", 25);     // pixels peak
+var DRIFT_F   = ctrl("Drift Freq (Hz)", 0.30);  // cycles per second
+
+// High-frequency micro jitter (muscle/hand tremor)
+var JIT_AMP = ctrl("Jitter Amp (px)", 2.0);
+var JIT_F   = ctrl("Jitter Freq (Hz)", 12.0);
+
+// Depth breathing (very subtle Z push/pull)
+var Z_BREATH_AMP = 1.5;      // px
+var Z_BREATH_F   = 0.10;     // Hz
+
+// Random seed (stable per layer by default)
+var SEED = ctrl("Seed", index);
+seedRandom(SEED, true);
+
+// ------- Helper: get additive wiggle delta (wiggle - base) -------
+function wigDelta(freq, amp){
+  // wiggle returns absolute value (base + noise); subtract base to get offset only
+  return wiggle(freq, amp) - value;
+}
+
+// ------- Build offsets -------
+var drift   = wigDelta(DRIFT_F, DRIFT_AMP) * strength;    // slow, wide
+var jitter  = wigDelta(JIT_F,  JIT_AMP)  * strength;      // fast, tiny
+
+// Make Z more restrained for realism (most shake is XY)
+var d = (value.length===3);
+if (d){
+  // Add subtle breathing on Z (independent of wiggles)
+  var zBreath = Z_BREATH_AMP * Math.sin(2*Math.PI*Z_BREATH_F*time) * strength;
+
+  // Combine: drift + jitter, with reduced Z from wiggles
+  var off = drift + jitter; // vector
+  off = [off[0], off[1], (off[2]||0)*0.35 + zBreath];
+
+  value + off;
+}else{
+  // If somehow not 3D, just return 2D offset (AE will coerce)
+  value + drift + jitter;
+}
+```
+
+---
+
+#### ✳️ ORIENTATION / ROTATION (paste on Orientation OR Rotation Z of the same Null/Camera)
+
+```js
+// ===== Handheld Camera - ORIENTATION (velocity-coupled tilt + micro roll) =====
+// Paste on Orientation (3D) of the same parent Null, or on the Camera's Orientation.
+// For a 2D layer, paste on Rotation (Z) — the code adapts.
+
+function ctrl(name, def){
+  try{ return effect(name)("Slider").value; }catch(e){ return def; }
+}
+
+var STRENGTH = ctrl("Shake Strength", 60);  var strength = clamp(STRENGTH/100, 0, 1);
+
+// Micro roll (random high-frequency tiny rotation)
+var ROT_JITTER   = ctrl("Rot Jitter (deg)", 0.35);  // degrees
+var ROT_JIT_F    = 9.0;                             // Hz
+
+// Shoulder pivot coupling: tilt from motion velocity (feels like pivoting around shoulder)
+var ROT_AMP_DEG  = ctrl("Rot Amp (deg)", 1.2);  // overall orientation amplitude
+var COUPLE_GAIN  = 0.0025;                      // deg per px/sec (maps position velocity to tilt)
+var DT = thisComp.frameDuration;
+
+// Access the same layer's position (works for Camera or Null). If not 3D, we handle gracefully.
+var pNow = transform.position.value;
+var pPrev = transform.position.valueAtTime(time - DT);
+var vel = (pNow - pPrev) / DT;     // px/sec vector or scalar
+var spd = (typeof vel === "number") ? Math.abs(vel) : length(vel);
+
+// Map horizontal/vertical velocity to tilts:
+// - Move right → slight roll right & tilt down a hair (cinema shoulder feel)
+// - Move up   → slight tilt back, etc.
+var tiltX=0, tiltY=0, rollZ=0;
+
+if (typeof pNow !== "number"){ // vector case
+  var vx = vel[0]||0, vy = vel[1]||0;
+  // Tilt around X is influenced by vertical speed (look up/down subtly)
+  tiltX = -vy * COUPLE_GAIN * ROT_AMP_DEG * strength;
+  // Tilt around Y is influenced by horizontal speed (look left/right subtly)
+  tiltY =  vx * COUPLE_GAIN * ROT_AMP_DEG * strength;
+  // Roll around Z slightly follows horizontal speed too (camera operator bias)
+  rollZ =  vx * COUPLE_GAIN * 0.5 * ROT_AMP_DEG * strength;
+}else{
+  // Scalar position (rare). Keep a tiny roll only.
+  rollZ = 0.25 * ROT_AMP_DEG * strength;
+}
+
+// Add micro random roll on top (seeded)
+seedRandom(ctrl("Seed", index), true);
+var microRoll = ROT_JITTER * Math.sin(2*Math.PI*ROT_JIT_F*time) * strength;
+
+// Compose orientation output depending on property dimension:
+if (thisProperty.matchName === "ADBE Orientation" || value.length){
+  // Orientation is a 3D vector [X,Y,Z] in degrees
+  var out = [value[0] + tiltX, value[1] + tiltY, value[2] + rollZ + microRoll];
+  out;
+}else{
+  // 2D Rotation (Z only)
+  value + rollZ + microRoll;
+}
+```
+
+---
+
+#### 🎛 Quick tuning (typical ranges)
+- **Shake Strength:** 30–75% (global intensity)
+- **Drift Amp (px):** 15–40, **Drift Freq:** 0.2–0.6 Hz (slow body/arm wander)
+- **Jitter Amp (px):** 0.8–3, **Jitter Freq:** 8–14 Hz (hand tremor)
+- **Rot Amp (deg):** 0.8–1.8, **Rot Jitter (deg):** 0.2–0.6 (tiny micro-roll)
+- Increase **COUPLE_GAIN** for more tilt that responds to motion; decrease to make it steadier.
+
+#### 🧪 Notes & best practices
+- Put these on a **parent Null** and leave your Camera’s own keys clean; animate the Null for moves.  
+- Use **markers** (“Start/Stop”) and multiply `strength` by a marker-based envelope if you need in/out ramping.  
+- For extra “operator steps,” add a very slow **posterizeTime(6–10)** *around the drift* only (gives subtle, stepped holds).  
+- If you’re doing **macro telephoto shake**, reduce Position amps and increase Orientation amps slightly.
+
+> Result: a natural “breathing” handheld look that avoids synthetic wiggle spam and stays stable enough for UI/product shots while still feeling alive.
+
+────────────────────────────────────────────────────────────────────────
+
 Next → **Controllers & Rigging**: learn to centralize multiple physics expressions under shared sliders and layer controls.
 
+────────────────────────────────────────────────────────────────────────
 
 <a id="controllers-and-rigging"></a>
 ## 🎛️ Controllers & Rigging — Practical Motion Recipes
