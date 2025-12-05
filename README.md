@@ -3833,3 +3833,21 @@ Every project, every comp, every null you create can become a *tool* instead of 
 🎬 *– The End –*
 ```
 
+⚖️ COPYRIGHT & PROPRIETARY NOTICE
+Copyright © 2025 Kristian Gabriel. All Rights Reserved.
+
+The contents of this repository, including all source code, text, expressions, and intellectual property contained herein, are the sole property of Kristian Gabriel.
+
+UNAUTHORIZED USE AND MODIFICATION STRICTLY PROHIBITED.
+
+Possession of this code does not constitute a transfer of ownership rights. You are granted a limited, non-exclusive, non-transferable license to view and utilize these scripts for personal production use only.
+
+You are strictly prohibited from:
+
+Creating Derivative Works: Modifying, altering, adapting, or building upon this source code for redistribution or resale.
+
+Redistribution: Copying, hosting, or sublicensing this repository or its contents on any other platform without express written consent from the author.
+
+Removal of Notices: Altering or removing any copyright management information or proprietary notices.
+
+Any violation of these terms will be considered an infringement of intellectual property rights and may result in immediate revocation of access and legal action to the fullest extent of the law.
